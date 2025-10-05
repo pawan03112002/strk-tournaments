@@ -1,41 +1,120 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, Lock, UserPlus } from 'lucide-react'
+import { Mail, Lock, UserPlus, Shield, CheckCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
 const Register = () => {
+  const [step, setStep] = useState(1) // 1: Form, 2: OTP Verification
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: ''
   })
+  const [otp, setOtp] = useState('')
+  const [generatedOTP, setGeneratedOTP] = useState('')
+  const [otpExpiry, setOtpExpiry] = useState(null)
+  const [timeRemaining, setTimeRemaining] = useState(0)
+  const [isResending, setIsResending] = useState(false)
+  
   const navigate = useNavigate()
-  const login = useAuthStore((state) => state.login)
+  const register = useAuthStore((state) => state.register)
+
+  // Timer for OTP expiry
+  useEffect(() => {
+    if (otpExpiry && step === 2) {
+      const interval = setInterval(() => {
+        const remaining = Math.max(0, Math.floor((otpExpiry - Date.now()) / 1000))
+        setTimeRemaining(remaining)
+        if (remaining === 0) {
+          clearInterval(interval)
+        }
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [otpExpiry, step])
+
+  const isGmailAddress = (email) => {
+    return email.toLowerCase().endsWith('@gmail.com')
+  }
+
+  const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString()
+  }
+
+  const sendOTP = () => {
+    const newOTP = generateOTP()
+    setGeneratedOTP(newOTP)
+    setOtpExpiry(Date.now() + 5 * 60 * 1000) // 5 minutes
+    
+    // In production, send OTP via email service (e.g., Firebase, SendGrid)
+    console.log('OTP:', newOTP) // For testing - remove in production
+    toast.success(`OTP sent to ${formData.email}!\nCheck console for OTP (Development Mode)`)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    // Validate Gmail address
+    if (!isGmailAddress(formData.email)) {
+      toast.error('Only Gmail addresses are allowed!')
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match!')
       return
     }
 
-    // Mock registration - replace with actual API call
-    try {
-      const mockUser = {
-        id: 1,
-        email: formData.email
-      }
-      const mockToken = 'mock-jwt-token-' + Date.now()
-      
-      login(mockUser, mockToken)
-      toast.success('Registration successful!')
-      navigate('/dashboard')
-    } catch (error) {
-      toast.error('Registration failed. Please try again.')
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters!')
+      return
     }
+
+    // Send OTP and move to verification step
+    sendOTP()
+    setStep(2)
+  }
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault()
+
+    if (!otp) {
+      toast.error('Please enter the OTP!')
+      return
+    }
+
+    if (timeRemaining === 0) {
+      toast.error('OTP has expired! Please request a new one.')
+      return
+    }
+
+    if (otp !== generatedOTP) {
+      toast.error('Invalid OTP! Please try again.')
+      return
+    }
+
+    // OTP verified, proceed with registration
+    try {
+      await register(formData.email, formData.password, formData.email.split('@')[0])
+      toast.success('Registration successful! Please login.')
+      navigate('/login')
+    } catch (error) {
+      toast.error(error.message || 'Registration failed. Please try again.')
+    }
+  }
+
+  const handleResendOTP = () => {
+    if (isResending) return
+    
+    setIsResending(true)
+    sendOTP()
+    setOtp('')
+    
+    setTimeout(() => {
+      setIsResending(false)
+    }, 3000)
   }
 
   const handleChange = (e) => {
@@ -87,24 +166,28 @@ const Register = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input-field pl-12"
-                  placeholder="your@email.com"
-                />
+          {step === 1 && (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Gmail Address <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="input-field pl-12"
+                    placeholder="yourname@gmail.com"
+                  />
+                </div>
+                <p className="text-xs text-yellow-400 mt-1">
+                  ⚠️ Only Gmail addresses (@gmail.com) are accepted
+                </p>
               </div>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -160,9 +243,80 @@ const Register = () => {
               type="submit"
               className="w-full btn-primary"
             >
-              Create Account
+              Send OTP
             </button>
           </form>
+          )}
+
+          {step === 2 && (
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full mb-3">
+                  <Shield className="w-8 h-8 text-green-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Verify Your Email</h3>
+                <p className="text-gray-400 text-sm">
+                  We've sent a 6-digit OTP to<br />
+                  <span className="text-white font-medium">{formData.email}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Enter OTP
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="input-field pl-12 text-center text-2xl tracking-widest"
+                    placeholder="000000"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-gray-400">
+                    {timeRemaining > 0 ? (
+                      <>
+                        <span className="text-green-400">⏱ Expires in: </span>
+                        <span className="font-mono">{Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}</span>
+                      </>
+                    ) : (
+                      <span className="text-red-400">⚠️ OTP Expired</span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={isResending || timeRemaining > 240}
+                    className="text-xs text-red-500 hover:text-red-400 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResending ? 'Sending...' : 'Resend OTP'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 btn-primary"
+                  disabled={otp.length !== 6}
+                >
+                  Verify & Register
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-gray-400">
