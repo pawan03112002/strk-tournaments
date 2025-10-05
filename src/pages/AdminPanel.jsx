@@ -467,8 +467,10 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Teams Tab Content */}
           {activeTab === 'teams' && (
+            <>
+          {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="card text-center">
               <div className="text-3xl font-bold text-orange-500 mb-2">
@@ -495,10 +497,8 @@ const AdminPanel = () => {
               <p className="text-gray-400 text-sm">Total Revenue (INR)</p>
             </div>
           </div>
-          )}
 
           {/* Bulk Actions Bar */}
-          {activeTab === 'teams' && (
           <AnimatePresence>
             {selectedTeams.length > 0 && (
               <motion.div
@@ -548,10 +548,8 @@ const AdminPanel = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          )}
 
           {/* Filters */}
-          {activeTab === 'teams' && (
           <div className="card mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Select All */}
@@ -605,10 +603,8 @@ const AdminPanel = () => {
               </div>
             </div>
           </div>
-          )}
 
           {/* Teams List */}
-          {activeTab === 'teams' && (
           <div className="space-y-4">
             {filteredTeams.length === 0 ? (
               <div className="card text-center py-12">
@@ -899,6 +895,7 @@ const AdminPanel = () => {
               Clear All Registrations
             </button>
           </div>
+          </>
           )}
 
           {/* Settings Tab */}
