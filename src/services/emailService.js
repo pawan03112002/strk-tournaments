@@ -8,8 +8,20 @@ const EMAILJS_CONFIG = {
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY'
 }
 
+// Debug: Log config (remove in production)
+console.log('EmailJS Config:', {
+  serviceId: EMAILJS_CONFIG.serviceId,
+  templateId: EMAILJS_CONFIG.templateId,
+  publicKeyPresent: !!EMAILJS_CONFIG.publicKey
+})
+
 // Initialize EmailJS
-emailjs.init(EMAILJS_CONFIG.publicKey)
+if (EMAILJS_CONFIG.publicKey && EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') {
+  emailjs.init(EMAILJS_CONFIG.publicKey)
+  console.log('EmailJS initialized successfully')
+} else {
+  console.warn('EmailJS not initialized - missing public key')
+}
 
 /**
  * Send OTP via Email
