@@ -78,9 +78,14 @@ const Register = () => {
       return
     }
 
-    // Check if email already registered
-    const existingUser = users.find(user => user.email.toLowerCase() === formData.email.toLowerCase())
-    if (existingUser) {
+    // Check if email already registered (using localStorage as backup)
+    const registeredEmails = JSON.parse(localStorage.getItem('registeredEmails') || '[]')
+    const emailExists = registeredEmails.some(email => email.toLowerCase() === formData.email.toLowerCase())
+    
+    // Also check in Firebase users array
+    const existingUser = users.find(user => user.email && user.email.toLowerCase() === formData.email.toLowerCase())
+    
+    if (emailExists || existingUser) {
       toast.error('This email is already registered! Please login instead.')
       setTimeout(() => navigate('/login'), 2000)
       return
@@ -122,6 +127,14 @@ const Register = () => {
     // OTP verified, proceed with registration
     try {
       await register(formData.email, formData.password, formData.email.split('@')[0])
+      
+      // Save email to localStorage to prevent duplicate registrations
+      const registeredEmails = JSON.parse(localStorage.getItem('registeredEmails') || '[]')
+      if (!registeredEmails.includes(formData.email.toLowerCase())) {
+        registeredEmails.push(formData.email.toLowerCase())
+        localStorage.setItem('registeredEmails', JSON.stringify(registeredEmails))
+      }
+      
       await fetchUsers() // Refresh users list
       toast.success('Registration successful! Please login.')
       navigate('/login')

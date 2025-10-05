@@ -1,15 +1,27 @@
 import { motion } from 'framer-motion'
-import { Trophy, Gamepad2 } from 'lucide-react'
+import { Trophy, Gamepad2, Users, Calendar, DollarSign, Award, Settings, LogOut } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import useTournamentStore from '../store/tournamentStore'
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
+  const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
+  
+  const myTeam = user?.email ? getTeamByEmail(user.email) : null
 
   if (!user) {
     navigate('/login')
     return null
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    toast.success('Logged out successfully!')
+    navigate('/')
   }
 
   return (
@@ -90,11 +102,90 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
+        {/* My Team Status */}
+        {myTeam && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-8 card bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500/50"
+          >
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Users className="w-6 h-6 text-blue-400" />
+              My Team
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-400 text-sm">Team Name</p>
+                <p className="text-white font-bold text-lg">{myTeam.teamName}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Team Number</p>
+                <p className="text-white font-bold text-lg">#{myTeam.teamNumber}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Payment Status</p>
+                <p className={`font-bold text-lg ${myTeam.paymentStatus === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {myTeam.paymentStatus === 'completed' ? '✓ Paid' : 'Pending'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Team Members</p>
+                <p className="text-white font-bold text-lg">{myTeam.players?.length || 0}/4 Players</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-12"
+        >
+          <button
+            onClick={() => navigate('/profile')}
+            className="card hover:bg-white/5 transition-all group"
+          >
+            <Settings className="w-8 h-8 text-gray-400 group-hover:text-blue-400 mb-3 mx-auto" />
+            <p className="text-white font-bold">Profile Settings</p>
+            <p className="text-gray-500 text-xs mt-1">Update your info</p>
+          </button>
+
+          <button
+            onClick={() => navigate('/tournament-registration')}
+            className="card hover:bg-white/5 transition-all group"
+          >
+            <Users className="w-8 h-8 text-gray-400 group-hover:text-green-400 mb-3 mx-auto" />
+            <p className="text-white font-bold">Register Team</p>
+            <p className="text-gray-500 text-xs mt-1">Join tournament</p>
+          </button>
+
+          <button
+            onClick={() => navigate('/downloads')}
+            className="card hover:bg-white/5 transition-all group"
+          >
+            <Gamepad2 className="w-8 h-8 text-gray-400 group-hover:text-purple-400 mb-3 mx-auto" />
+            <p className="text-white font-bold">Downloads</p>
+            <p className="text-gray-500 text-xs mt-1">Get game files</p>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="card hover:bg-red-500/10 transition-all group border-red-500/20"
+          >
+            <LogOut className="w-8 h-8 text-gray-400 group-hover:text-red-400 mb-3 mx-auto" />
+            <p className="text-white font-bold">Logout</p>
+            <p className="text-gray-500 text-xs mt-1">Sign out</p>
+          </button>
+        </motion.div>
+
         {/* Info Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.9 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12"
         >
           <div className="card text-center">
