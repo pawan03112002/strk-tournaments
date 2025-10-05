@@ -22,6 +22,12 @@ const Register = () => {
   const navigate = useNavigate()
   const register = useAuthStore((state) => state.register)
   const users = useAuthStore((state) => state.users)
+  const fetchUsers = useAuthStore((state) => state.fetchUsers)
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   // Timer for OTP expiry
   useEffect(() => {
@@ -116,6 +122,7 @@ const Register = () => {
     // OTP verified, proceed with registration
     try {
       await register(formData.email, formData.password, formData.email.split('@')[0])
+      await fetchUsers() // Refresh users list
       toast.success('Registration successful! Please login.')
       navigate('/login')
     } catch (error) {

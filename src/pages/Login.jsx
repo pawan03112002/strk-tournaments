@@ -25,6 +25,12 @@ const Login = () => {
   const login = useAuthStore((state) => state.login)
   const users = useAuthStore((state) => state.users)
   const updateUserPassword = useAuthStore((state) => state.updateUserPassword)
+  const fetchUsers = useAuthStore((state) => state.fetchUsers)
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   // OTP Timer
   useEffect(() => {
