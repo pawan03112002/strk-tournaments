@@ -25,6 +25,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/tournament-registration" element={<TournamentRegistration />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/jai_shree_ram" element={<AdminPanel />} />
         </Routes>
         <Footer />
         <Toaster 

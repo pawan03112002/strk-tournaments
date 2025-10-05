@@ -58,6 +58,14 @@ const AdminPanel = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
   const [resetNewPassword, setResetNewPassword] = useState('')
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  
+  // OTP login states
+  const [loginMethod, setLoginMethod] = useState('password') // 'password' or 'otp'
+  const [otpEmail, setOtpEmail] = useState('')
+  const [generatedOTP, setGeneratedOTP] = useState('')
+  const [enteredOTP, setEnteredOTP] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpExpiry, setOtpExpiry] = useState(null)
 
   // Stage progression order
   const stageProgression = {
@@ -66,6 +74,61 @@ const AdminPanel = () => {
     semiFinals: { next: 'finals', prev: 'quarterFinals', label: 'Finals', icon: Trophy },
     finals: { next: 'champion', prev: 'semiFinals', label: 'Champion', icon: Crown },
     champion: { next: null, prev: 'finals', label: 'Winner', icon: Crown }
+  }
+
+  // OTP handlers
+  const handleSendOTP = (e) => {
+    e.preventDefault()
+    
+    if (otpEmail !== adminEmail) {
+      toast.error('Email does not match admin email!')
+      return
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    setGeneratedOTP(otp)
+    setOtpSent(true)
+    setOtpExpiry(Date.now() + 5 * 60 * 1000) // 5 minutes expiry
+    
+    // In production, send OTP via email API
+    // For now, show it in console and toast
+    console.log('Generated OTP:', otp)
+    toast.success(`OTP sent to ${otpEmail}! Check console for OTP (Demo mode)`, {
+      duration: 10000
+    })
+  }
+
+  const handleVerifyOTP = (e) => {
+    e.preventDefault()
+    
+    // Check if OTP expired
+    if (Date.now() > otpExpiry) {
+      toast.error('OTP expired! Please request a new one.')
+      setOtpSent(false)
+      setEnteredOTP('')
+      return
+    }
+
+    // Verify OTP
+    if (enteredOTP === generatedOTP) {
+      setIsAuthenticated(true)
+      toast.success('Login successful!')
+    } else {
+      toast.error('Invalid OTP! Please try again.')
+    }
+  }
+
+  const handleResendOTP = () => {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    setGeneratedOTP(otp)
+    setOtpExpiry(Date.now() + 5 * 60 * 1000)
+    setEnteredOTP('')
+    
+    console.log('New OTP:', otp)
+    toast.success(`New OTP sent to ${otpEmail}! Check console for OTP (Demo mode)`, {
+      duration: 10000
+    })
   }
 
   // Handle stage upgrade
