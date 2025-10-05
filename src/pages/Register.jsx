@@ -126,18 +126,24 @@ const Register = () => {
 
     // OTP verified, proceed with registration
     try {
-      await register(formData.email, formData.password, formData.email.split('@')[0])
+      const result = await register(formData.email, formData.password, formData.email.split('@')[0])
       
-      // Save email to localStorage to prevent duplicate registrations
-      const registeredEmails = JSON.parse(localStorage.getItem('registeredEmails') || '[]')
-      if (!registeredEmails.includes(formData.email.toLowerCase())) {
-        registeredEmails.push(formData.email.toLowerCase())
-        localStorage.setItem('registeredEmails', JSON.stringify(registeredEmails))
+      if (result.success) {
+        // Save email to localStorage to prevent duplicate registrations
+        const registeredEmails = JSON.parse(localStorage.getItem('registeredEmails') || '[]')
+        if (!registeredEmails.includes(formData.email.toLowerCase())) {
+          registeredEmails.push(formData.email.toLowerCase())
+          localStorage.setItem('registeredEmails', JSON.stringify(registeredEmails))
+        }
+        
+        await fetchUsers() // Refresh users list
+        toast.success('Registration successful! Please login.')
+        
+        // Auto logout after registration to ensure clean login
+        setTimeout(() => navigate('/login'), 1500)
+      } else {
+        toast.error(result.error || 'Registration failed. Please try again.')
       }
-      
-      await fetchUsers() // Refresh users list
-      toast.success('Registration successful! Please login.')
-      navigate('/login')
     } catch (error) {
       toast.error(error.message || 'Registration failed. Please try again.')
     }

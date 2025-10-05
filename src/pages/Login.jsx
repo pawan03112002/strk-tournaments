@@ -51,22 +51,24 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Mock login - replace with actual API call
+    // Validate Gmail address
+    if (!isGmailAddress(formData.email)) {
+      toast.error('Only Gmail addresses are allowed!')
+      return
+    }
+    
     try {
-      // Simulate API call
-      const mockUser = {
-        id: 1,
-        username: 'ProGamer123',
-        email: formData.email,
-        ffId: 'FF123456789'
-      }
-      const mockToken = 'mock-jwt-token-' + Date.now()
+      // Use Firebase authentication
+      const result = await login(formData.email, formData.password)
       
-      login(mockUser, mockToken)
-      toast.success('Login successful!')
-      navigate('/dashboard')
+      if (result.success) {
+        toast.success('Login successful!')
+        navigate('/dashboard')
+      } else {
+        toast.error(result.error || 'Login failed. Please check your credentials.')
+      }
     } catch (error) {
-      toast.error('Login failed. Please try again.')
+      toast.error('Login failed. Please check your credentials.')
     }
   }
 
