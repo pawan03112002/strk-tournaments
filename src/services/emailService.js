@@ -35,8 +35,8 @@ export const sendOTPEmail = async (email, otp, name = 'User') => {
       to_name: name,
       otp_code: otp,
       from_name: 'STRK Tournaments',
-      to_email: email,  // Recipient email
-      reply_to: email   // Also set reply_to
+      email: email,  // Match template's {{email}} variable
+      reply_to: email
     }
 
     // Send directly to the email address
