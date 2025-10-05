@@ -9,9 +9,17 @@ const Dashboard = () => {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
-  const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
   
-  const myTeam = user?.email ? getTeamByEmail(user.email) : null
+  // Safely get team
+  let myTeam = null
+  try {
+    const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
+    if (user?.email && getTeamByEmail) {
+      myTeam = getTeamByEmail(user.email)
+    }
+  } catch (error) {
+    console.log('Could not fetch team:', error)
+  }
 
   if (!user) {
     navigate('/login')
@@ -19,9 +27,14 @@ const Dashboard = () => {
   }
 
   const handleLogout = async () => {
-    await logout()
-    toast.success('Logged out successfully!')
-    navigate('/')
+    try {
+      await logout()
+      toast.success('Logged out successfully!')
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      navigate('/')
+    }
   }
 
   return (
