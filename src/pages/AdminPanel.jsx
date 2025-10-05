@@ -361,22 +361,78 @@ const AdminPanel = () => {
           <div className="text-center mb-6">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-white mb-2">Admin Panel</h1>
-            <p className="text-gray-400">Enter password to access</p>
+            <p className="text-gray-400">
+              {showForgotPassword ? 'Reset your password' : 'Enter password to access'}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
-              className="input-field mb-4"
-              autoFocus
-            />
-            <button type="submit" className="btn-primary w-full">
-              Login
-            </button>
-          </form>
+          {!showForgotPassword ? (
+            <form onSubmit={handleLogin}>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password"
+                className="input-field mb-4"
+                autoFocus
+              />
+              <button type="submit" className="btn-primary w-full mb-3">
+                Login
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-red-500 hover:text-red-400 transition-colors text-sm w-full"
+              >
+                Forgot Password?
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleForgotPassword}>
+              <div className="mb-4">
+                <label className="block text-gray-400 mb-2 text-sm">Admin Email</label>
+                <input
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder="Enter admin email"
+                  className="input-field"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Default: admin@strktournaments.com</p>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-gray-400 mb-2 text-sm">New Password</label>
+                <input
+                  type="password"
+                  value={resetNewPassword}
+                  onChange={(e) => setResetNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="input-field"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              </div>
+              
+              <button type="submit" className="btn-primary w-full mb-3">
+                Reset Password
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setForgotPasswordEmail('')
+                  setResetNewPassword('')
+                }}
+                className="btn-secondary w-full"
+              >
+                Back to Login
+              </button>
+            </form>
+          )}
 
           <button
             onClick={() => navigate('/')}
