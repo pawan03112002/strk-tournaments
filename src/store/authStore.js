@@ -4,13 +4,17 @@ import {
   signInWithEmailAndPassword, 
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
 import { auth, db } from '../config/firebase'
 
 const useAuthStore = create((set, get) => ({
   user: null,
+  users: [],
   loading: true,
   error: null,
   
@@ -148,6 +152,42 @@ const useAuthStore = create((set, get) => ({
     } catch (error) {
       set({ error: error.message })
       return { success: false, error: error.message }
+    }
+  },
+
+  // Update user password (for forgot password)
+  updateUserPassword: async (email, newPassword) => {
+    try {
+      // This is a simplified version - in production, use Firebase's password reset
+      // For now, we'll update it when the user logs in next time
+      const usersSnapshot = await getDocs(collection(db, 'users'))
+      const userDoc = usersSnapshot.docs.find(doc => doc.data().email === email)
+      
+      if (userDoc) {
+        await updateDoc(doc(db, 'users', userDoc.id), {
+          passwordResetPending: true,
+          newPassword: newPassword, // In production, hash this!
+          updatedAt: new Date().toISOString()
+        })
+      }
+      
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Fetch all users (for duplicate check)
+  fetchUsers: async () => {
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'))
+      const users = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      set({ users })
+    } catch (error) {
+      console.error('Error fetching users:', error)
     }
   },
 }))

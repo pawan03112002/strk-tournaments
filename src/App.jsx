@@ -10,6 +10,7 @@ import Profile from './pages/Profile'
 import Downloads from './pages/Downloads'
 import TournamentRegistration from './pages/TournamentRegistration'
 import AdminPanel from './pages/AdminPanel'
+import TermsAndConditions from './pages/TermsAndConditions'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/tournament-registration" element={<TournamentRegistration />} />
           <Route path="/jai_shree_ram" element={<AdminPanel />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         </Routes>
         <Footer />
         <Toaster 

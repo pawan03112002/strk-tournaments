@@ -21,6 +21,7 @@ const Register = () => {
   
   const navigate = useNavigate()
   const register = useAuthStore((state) => state.register)
+  const users = useAuthStore((state) => state.users)
 
   // Timer for OTP expiry
   useEffect(() => {
@@ -68,6 +69,14 @@ const Register = () => {
     // Validate Gmail address
     if (!isGmailAddress(formData.email)) {
       toast.error('Only Gmail addresses are allowed!')
+      return
+    }
+
+    // Check if email already registered
+    const existingUser = users.find(user => user.email.toLowerCase() === formData.email.toLowerCase())
+    if (existingUser) {
+      toast.error('This email is already registered! Please login instead.')
+      setTimeout(() => navigate('/login'), 2000)
       return
     }
 
@@ -242,9 +251,9 @@ const Register = () => {
               />
               <label className="ml-2 text-sm text-gray-400">
                 I agree to the{' '}
-                <a href="#" className="text-red-500 hover:text-red-400">
+                <Link to="/terms-and-conditions" target="_blank" className="text-red-500 hover:text-red-400 underline">
                   Terms & Conditions
-                </a>
+                </Link>
               </label>
             </div>
 
