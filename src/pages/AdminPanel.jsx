@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Mail, Phone, Trophy, Download, Search, Filter, Calendar, Shield, ChevronRight, Crown, Target, Medal, Edit2, Trash2, CheckSquare, X, Save, ArrowUpCircle, ChevronLeft, Undo2 } from 'lucide-react'
+import { Users, Mail, Phone, Trophy, Download, Search, Filter, Calendar, Shield, ChevronRight, Crown, Target, Medal, Edit2, Trash2, CheckSquare, X, Save, ArrowUpCircle, ChevronLeft, Undo2, Settings, Lock, Facebook, Twitter, Instagram, MessageCircle, Youtube, Eye, EyeOff } from 'lucide-react'
 import useTournamentStore from '../store/tournamentStore'
+import useSettingsStore from '../store/settingsStore'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -23,6 +24,40 @@ const AdminPanel = () => {
   const [editingTeam, setEditingTeam] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [sortBy, setSortBy] = useState('newest')
+  const [activeTab, setActiveTab] = useState('teams') // teams, settings, security
+  
+  // Settings store
+  const {
+    socialMedia,
+    support,
+    updateSocialMedia,
+    updateSupport,
+    changeAdminPassword,
+    updateAdminEmail,
+    adminEmail,
+    resetAdminPassword
+  } = useSettingsStore()
+
+  // Settings form states
+  const [settingsForm, setSettingsForm] = useState({
+    facebook: socialMedia.facebook,
+    twitter: socialMedia.twitter,
+    instagram: socialMedia.instagram,
+    discord: socialMedia.discord,
+    youtube: socialMedia.youtube,
+    whatsapp: socialMedia.whatsapp,
+    supportEmail: support.email,
+    supportPhone: support.phone
+  })
+
+  // Security form states
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPasswords, setShowPasswords] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   // Stage progression order
   const stageProgression = {
@@ -112,6 +147,90 @@ const AdminPanel = () => {
       setSelectedTeams([])
     } else {
       setSelectedTeams(filteredTeams.map(t => t.teamId))
+    }
+  }
+
+  // Settings handlers
+  const handleSaveSettings = () => {
+    // Save all social media settings
+    Object.keys(settingsForm).forEach(key => {
+      if (['facebook', 'twitter', 'instagram', 'discord', 'youtube', 'whatsapp'].includes(key)) {
+        updateSocialMedia(key, settingsForm[key])
+      } else if (key === 'supportEmail') {
+        updateSupport('email', settingsForm[key])
+      } else if (key === 'supportPhone') {
+        updateSupport('phone', settingsForm[key])
+      }
+    })
+    toast.success('Settings saved successfully!')
+  }
+
+  const handleUpdateSettingsForm = (platform, field, value) => {
+    setSettingsForm(prev => ({
+      ...prev,
+      [platform]: {
+        ...prev[platform],
+        [field]: value
+      }
+    }))
+  }
+
+  // Change password handler
+  const handleChangePassword = (e) => {
+    e.preventDefault()
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all fields!')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match!')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters!')
+      return
+    }
+
+    const { verifyAdminPassword } = useSettingsStore.getState()
+    if (!verifyAdminPassword(currentPassword)) {
+      toast.error('Current password is incorrect!')
+      return
+    }
+
+    const result = changeAdminPassword(newPassword)
+    if (result.success) {
+      toast.success('Password changed successfully!')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+  }
+
+  // Forgot password handler
+  const handleForgotPassword = (e) => {
+    e.preventDefault()
+    
+    if (!forgotPasswordEmail || !resetNewPassword) {
+      toast.error('Please fill in all fields!')
+      return
+    }
+
+    if (resetNewPassword.length < 6) {
+      toast.error('Password must be at least 6 characters!')
+      return
+    }
+
+    const result = resetAdminPassword(forgotPasswordEmail, resetNewPassword)
+    if (result.success) {
+      toast.success('Password reset successfully!')
+      setForgotPasswordEmail('')
+      setResetNewPassword('')
+      setShowForgotPassword(false)
+    } else {
+      toast.error(result.message)
     }
   }
 
@@ -291,8 +410,66 @@ const AdminPanel = () => {
             </div>
           </div>
 
+          {/* Tab Navigation */}
+          <div className="card mb-8">
+            <div className="flex gap-2 border-b border-gray-700">
+              <button
+                onClick={() => setActiveTab('teams')}
+                className={`px-6 py-3 font-bold transition-colors relative ${
+                  activeTab === 'teams'
+                    ? 'text-red-500'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Users className="w-5 h-5 inline mr-2" />
+                Teams Management
+                {activeTab === 'teams' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-6 py-3 font-bold transition-colors relative ${
+                  activeTab === 'settings'
+                    ? 'text-red-500'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Settings className="w-5 h-5 inline mr-2" />
+                Website Settings
+                {activeTab === 'settings' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`px-6 py-3 font-bold transition-colors relative ${
+                  activeTab === 'security'
+                    ? 'text-red-500'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Lock className="w-5 h-5 inline mr-2" />
+                Security
+                {activeTab === 'security' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {activeTab === 'teams' && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="card text-center">
               <div className="text-3xl font-bold text-orange-500 mb-2">
                 {getTotalTeams()}
@@ -318,8 +495,10 @@ const AdminPanel = () => {
               <p className="text-gray-400 text-sm">Total Revenue (INR)</p>
             </div>
           </div>
+          )}
 
           {/* Bulk Actions Bar */}
+          {activeTab === 'teams' && (
           <AnimatePresence>
             {selectedTeams.length > 0 && (
               <motion.div
@@ -369,8 +548,10 @@ const AdminPanel = () => {
               </motion.div>
             )}
           </AnimatePresence>
+          )}
 
           {/* Filters */}
+          {activeTab === 'teams' && (
           <div className="card mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Select All */}
@@ -424,8 +605,10 @@ const AdminPanel = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Teams List */}
+          {activeTab === 'teams' && (
           <div className="space-y-4">
             {filteredTeams.length === 0 ? (
               <div className="card text-center py-12">
@@ -716,6 +899,386 @@ const AdminPanel = () => {
               Clear All Registrations
             </button>
           </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="card">
+                <h2 className="text-2xl font-bold text-white mb-6">Website Settings</h2>
+                
+                {/* Social Media Settings */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Social Media Links
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Facebook */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Facebook className="w-5 h-5 text-blue-600" />
+                        <h4 className="text-white font-bold">Facebook</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.facebook.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('facebook', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://facebook.com/yourpage"
+                        value={settingsForm.facebook.url}
+                        onChange={(e) => handleUpdateSettingsForm('facebook', 'url', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.facebook.enabled}
+                      />
+                    </div>
+
+                    {/* Twitter */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Twitter className="w-5 h-5 text-sky-500" />
+                        <h4 className="text-white font-bold">Twitter</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.twitter.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('twitter', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://twitter.com/yourpage"
+                        value={settingsForm.twitter.url}
+                        onChange={(e) => handleUpdateSettingsForm('twitter', 'url', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.twitter.enabled}
+                      />
+                    </div>
+
+                    {/* Instagram */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Instagram className="w-5 h-5 text-pink-600" />
+                        <h4 className="text-white font-bold">Instagram</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.instagram.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('instagram', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://instagram.com/yourpage"
+                        value={settingsForm.instagram.url}
+                        onChange={(e) => handleUpdateSettingsForm('instagram', 'url', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.instagram.enabled}
+                      />
+                    </div>
+
+                    {/* Discord */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <MessageCircle className="w-5 h-5 text-indigo-600" />
+                        <h4 className="text-white font-bold">Discord</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.discord.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('discord', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://discord.gg/yourinvite"
+                        value={settingsForm.discord.url}
+                        onChange={(e) => handleUpdateSettingsForm('discord', 'url', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.discord.enabled}
+                      />
+                    </div>
+
+                    {/* YouTube */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Youtube className="w-5 h-5 text-red-600" />
+                        <h4 className="text-white font-bold">YouTube</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.youtube.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('youtube', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://youtube.com/@yourchannel"
+                        value={settingsForm.youtube.url}
+                        onChange={(e) => handleUpdateSettingsForm('youtube', 'url', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.youtube.enabled}
+                      />
+                    </div>
+
+                    {/* WhatsApp */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <MessageCircle className="w-5 h-5 text-green-600" />
+                        <h4 className="text-white font-bold">WhatsApp</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.whatsapp.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('whatsapp', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="tel"
+                        placeholder="+919876543210 (with country code)"
+                        value={settingsForm.whatsapp.number}
+                        onChange={(e) => handleUpdateSettingsForm('whatsapp', 'number', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.whatsapp.enabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Support Contact Settings */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Mail className="w-5 h-5" />
+                    Support Contact
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Support Email */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Mail className="w-5 h-5 text-blue-500" />
+                        <h4 className="text-white font-bold">Support Email</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.supportEmail.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('supportEmail', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="email"
+                        placeholder="support@strktournaments.com"
+                        value={settingsForm.supportEmail.address}
+                        onChange={(e) => handleUpdateSettingsForm('supportEmail', 'address', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.supportEmail.enabled}
+                      />
+                    </div>
+
+                    {/* Support Phone */}
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Phone className="w-5 h-5 text-green-500" />
+                        <h4 className="text-white font-bold">Support Phone</h4>
+                        <label className="ml-auto flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.supportPhone.enabled}
+                            onChange={(e) => handleUpdateSettingsForm('supportPhone', 'enabled', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-400">Enable</span>
+                        </label>
+                      </div>
+                      <input
+                        type="tel"
+                        placeholder="+91 98765 43210"
+                        value={settingsForm.supportPhone.number}
+                        onChange={(e) => handleUpdateSettingsForm('supportPhone', 'number', e.target.value)}
+                        className="input-field w-full"
+                        disabled={!settingsForm.supportPhone.enabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveSettings}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Save className="w-5 h-5" />
+                    Save Settings
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Change Password */}
+              <div className="card">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Lock className="w-6 h-6" />
+                  Change Admin Password
+                </h2>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 mb-2">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="input-field w-full"
+                        placeholder="Enter current password"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-2">New Password</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="input-field w-full"
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-400 mb-2">Confirm New Password</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="input-field w-full"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showPasswords}
+                      onChange={(e) => setShowPasswords(e.target.checked)}
+                      className="w-4 h-4"
+                      id="showPasswords"
+                    />
+                    <label htmlFor="showPasswords" className="text-gray-400 text-sm">
+                      Show passwords
+                    </label>
+                  </div>
+                  <button type="submit" className="btn-primary w-full">
+                    Change Password
+                  </button>
+                </form>
+              </div>
+
+              {/* Forgot Password */}
+              <div className="card">
+                <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Shield className="w-6 h-6" />
+                  Forgot Password / Reset
+                </h2>
+                <p className="text-gray-400 mb-4 text-sm">
+                  If you forgot your password, you can reset it using your admin email: <span className="text-white font-bold">{adminEmail}</span>
+                </p>
+                
+                {!showForgotPassword ? (
+                  <button
+                    onClick={() => setShowForgotPassword(true)}
+                    className="btn-secondary"
+                  >
+                    Reset Password
+                  </button>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <label className="block text-gray-400 mb-2">Admin Email</label>
+                      <input
+                        type="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        className="input-field w-full"
+                        placeholder="Enter admin email"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-400 mb-2">New Password</label>
+                      <input
+                        type="password"
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        className="input-field w-full"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" className="btn-primary flex-1">
+                        Reset Password
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForgotPassword(false)
+                          setForgotPasswordEmail('')
+                          setResetNewPassword('')
+                        }}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Admin Email */}
+              <div className="card bg-blue-500/10 border-2 border-blue-500/30">
+                <h3 className="text-xl font-bold text-white mb-2">Admin Email</h3>
+                <p className="text-gray-400 text-sm mb-4">
+                  Current admin email: <span className="text-white font-bold">{adminEmail}</span>
+                </p>
+                <p className="text-gray-500 text-xs">
+                  To change admin email, modify it in the settings store.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
         </motion.div>
       </div>
     </div>

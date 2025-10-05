@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
-import { Trophy } from 'lucide-react'
+import { Trophy, Mail, Phone, Facebook, Twitter, Instagram, MessageCircle, Youtube } from 'lucide-react'
+import useSettingsStore from '../store/settingsStore'
 
 const Footer = () => {
+  const { socialMedia, support } = useSettingsStore()
+
   return (
     <footer className="bg-gray-900/50 backdrop-blur-lg border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          {/* Brand */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          {/* Brand & Description */}
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-4">
               <Trophy className="w-8 h-8 text-red-500" />
@@ -33,19 +36,133 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Navigation */}
+          {/* Quick Links & Support */}
           <div>
-            <Link 
-              to="/dashboard" 
-              className="text-gray-400 hover:text-red-500 transition-colors font-medium"
-            >
-              Dashboard
-            </Link>
+            <h3 className="text-white font-bold mb-4">Quick Links</h3>
+            <div className="flex flex-col space-y-2">
+              <Link 
+                to="/dashboard" 
+                className="text-gray-400 hover:text-red-500 transition-colors text-sm"
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/downloads" 
+                className="text-gray-400 hover:text-red-500 transition-colors text-sm"
+              >
+                Downloads
+              </Link>
+            </div>
+
+            {/* Support Contact */}
+            {(support.email.enabled || support.phone.enabled) && (
+              <div className="mt-6">
+                <h3 className="text-white font-bold mb-3">Support</h3>
+                <div className="space-y-2">
+                  {support.email.enabled && support.email.address && (
+                    <a 
+                      href={`mailto:${support.email.address}`}
+                      className="flex items-center gap-2 text-gray-400 hover:text-red-500 transition-colors text-sm"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {support.email.address}
+                    </a>
+                  )}
+                  {support.phone.enabled && support.phone.number && (
+                    <a 
+                      href={`tel:${support.phone.number}`}
+                      className="flex items-center gap-2 text-gray-400 hover:text-red-500 transition-colors text-sm"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {support.phone.number}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Social Media */}
+          <div>
+            <h3 className="text-white font-bold mb-4">Follow Us</h3>
+            <div className="flex flex-wrap gap-3">
+              {socialMedia.facebook.enabled && socialMedia.facebook.url && (
+                <a
+                  href={socialMedia.facebook.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-blue-600 rounded-lg transition-colors"
+                  title="Facebook"
+                >
+                  <Facebook className="w-5 h-5 text-white" />
+                </a>
+              )}
+              {socialMedia.twitter.enabled && socialMedia.twitter.url && (
+                <a
+                  href={socialMedia.twitter.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-sky-500 rounded-lg transition-colors"
+                  title="Twitter"
+                >
+                  <Twitter className="w-5 h-5 text-white" />
+                </a>
+              )}
+              {socialMedia.instagram.enabled && socialMedia.instagram.url && (
+                <a
+                  href={socialMedia.instagram.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-pink-600 rounded-lg transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram className="w-5 h-5 text-white" />
+                </a>
+              )}
+              {socialMedia.discord.enabled && socialMedia.discord.url && (
+                <a
+                  href={socialMedia.discord.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-indigo-600 rounded-lg transition-colors"
+                  title="Discord"
+                >
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </a>
+              )}
+              {socialMedia.youtube.enabled && socialMedia.youtube.url && (
+                <a
+                  href={socialMedia.youtube.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-red-600 rounded-lg transition-colors"
+                  title="YouTube"
+                >
+                  <Youtube className="w-5 h-5 text-white" />
+                </a>
+              )}
+              {socialMedia.whatsapp.enabled && socialMedia.whatsapp.number && (
+                <a
+                  href={`https://wa.me/${socialMedia.whatsapp.number.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 bg-gray-800 hover:bg-green-600 rounded-lg transition-colors"
+                  title="WhatsApp"
+                >
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </a>
+              )}
+            </div>
+            
+            {/* Show message if no social media enabled */}
+            {!Object.values(socialMedia).some(s => s.enabled) && (
+              <p className="text-gray-500 text-sm">Connect with us on social media (Coming soon!)</p>
+            )}
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 pt-8 border-t border-gray-800">
+        <div className="pt-8 border-t border-gray-800">
           <p className="text-gray-400 text-sm text-center">
             © 2025 STRK Tournaments. All rights reserved.
           </p>
