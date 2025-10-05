@@ -32,16 +32,19 @@ if (EMAILJS_CONFIG.publicKey && EMAILJS_CONFIG.publicKey !== 'YOUR_PUBLIC_KEY') 
 export const sendOTPEmail = async (email, otp, name = 'User') => {
   try {
     const templateParams = {
-      to_email: email,
       to_name: name,
       otp_code: otp,
-      from_name: 'STRK Tournaments'
+      from_name: 'STRK Tournaments',
+      to_email: email,  // Recipient email
+      reply_to: email   // Also set reply_to
     }
 
+    // Send directly to the email address
     const response = await emailjs.send(
       EMAILJS_CONFIG.serviceId,
       EMAILJS_CONFIG.templateId,
-      templateParams
+      templateParams,
+      EMAILJS_CONFIG.publicKey
     )
 
     if (response.status === 200) {
