@@ -5,6 +5,15 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useTournamentStore from '../store/tournamentStore'
+import { 
+  processRazorpayPayment, 
+  processStripePayment, 
+  detectCurrency, 
+  getPaymentAmount, 
+  formatCurrency,
+  loadRazorpayScript 
+} from '../services/paymentService'
+import { sendPaymentConfirmation } from '../services/emailService'
 
 const TournamentRegistration = () => {
   const navigate = useNavigate()
@@ -56,7 +65,7 @@ const TournamentRegistration = () => {
     USD: '$7'
   }
 
-  // Check if user already has a registered team on mount
+  // Check if user already has a registered team on mount and detect currency
   useEffect(() => {
     if (user?.email) {
       const team = getTeamByEmail(user.email)
@@ -65,6 +74,15 @@ const TournamentRegistration = () => {
         setShowExistingTeamModal(true)
         toast.error('You have already registered for this tournament!')
       }
+    }
+    
+    // Detect currency based on location
+    const detectedCurrency = detectCurrency()
+    setCurrency(detectedCurrency)
+    
+    // Load Razorpay script if INR
+    if (detectedCurrency === 'INR') {
+      loadRazorpayScript()
     }
   }, [user, getTeamByEmail])
 
@@ -134,40 +152,81 @@ const TournamentRegistration = () => {
       return
     }
 
-    // Simulate payment processing
+    // Process payment
     setIsProcessingPayment(true)
     toast.loading('Processing payment...', { id: 'payment' })
 
-    // Simulate payment gateway delay
-    setTimeout(() => {
-      // Payment successful - Register team automatically
-      const registeredTeam = registerTeam({
+    try {
+      const amount = getPaymentAmount(currency)
+      const orderDetails = {
+        amount,
+        currency,
         teamName: formData.teamName,
-        players: [
-          formData.player1Username,
-          formData.player2Username,
-          formData.player3Username,
-          formData.player4Username
-        ],
-        contactEmail: formData.contactEmail,
-        contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
-        teamLogo: logoPreview || null,
-        currency: currency,
-        amount: currency === 'INR' ? '₹500' : '$7',
-        userId: user?.id
-      })
+        email: formData.contactEmail,
+        phone: `${formData.countryCode}${formData.phoneNumber}`,
+        name: formData.teamName,
+        orderId: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
 
+      let paymentResult
+
+      if (currency === 'INR') {
+        // Process Razorpay payment for INR
+        paymentResult = await processRazorpayPayment(orderDetails)
+      } else {
+        // Process Stripe payment for other currencies
+        paymentResult = await processStripePayment(orderDetails)
+      }
+
+      if (paymentResult.success) {
+        // Payment successful - Register team
+        const registeredTeam = registerTeam({
+          teamName: formData.teamName,
+          players: [
+            formData.player1Username,
+            formData.player2Username,
+            formData.player3Username,
+            formData.player4Username
+          ],
+          contactEmail: formData.contactEmail,
+          contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
+          teamLogo: logoPreview || null,
+          currency: currency,
+          amount: formatCurrency(amount, currency),
+          userId: user?.id,
+          paymentId: paymentResult.paymentId || paymentResult.orderId,
+          paymentStatus: 'completed'
+        })
+
+        setIsProcessingPayment(false)
+        setPaymentSuccess(true)
+        setAssignedTeamNumber(registeredTeam.teamNumber)
+        
+        toast.success(`Payment successful! You are ${registeredTeam.teamNumber}`, { id: 'payment' })
+        
+        // Send confirmation email
+        await sendPaymentConfirmation(formData.contactEmail, {
+          teamName: formData.teamName,
+          teamNumber: registeredTeam.teamNumber,
+          amount: formatCurrency(amount, currency),
+          transactionId: paymentResult.paymentId || paymentResult.orderId
+        })
+        
+        // Auto redirect after 5 seconds
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 5000)
+      }
+    } catch (error) {
       setIsProcessingPayment(false)
-      setPaymentSuccess(true)
-      setAssignedTeamNumber(registeredTeam.teamNumber)
+      console.error('Payment error:', error)
       
-      toast.success(`Payment successful! You are ${registeredTeam.teamNumber}`, { id: 'payment' })
-      
-      // Auto redirect after 5 seconds
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 5000)
-    }, 2000)
+      if (error.message === 'Payment cancelled by user') {
+        toast.error('Payment cancelled', { id: 'payment' })
+      } else {
+        toast.error(error.description || 'Payment failed. Please try again.', { id: 'payment' })
+      }
+    }
   }
 
   return (

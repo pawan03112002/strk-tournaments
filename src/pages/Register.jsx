@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Mail, Lock, UserPlus, Shield, CheckCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import { sendOTPEmail } from '../services/emailService'
 
 const Register = () => {
   const [step, setStep] = useState(1) // 1: Form, 2: OTP Verification
@@ -43,14 +44,22 @@ const Register = () => {
     return Math.floor(100000 + Math.random() * 900000).toString()
   }
 
-  const sendOTP = () => {
+  const sendOTP = async () => {
     const newOTP = generateOTP()
     setGeneratedOTP(newOTP)
     setOtpExpiry(Date.now() + 5 * 60 * 1000) // 5 minutes
     
-    // In production, send OTP via email service (e.g., Firebase, SendGrid)
-    console.log('OTP:', newOTP) // For testing - remove in production
-    toast.success(`OTP sent to ${formData.email}!\nCheck console for OTP (Development Mode)`)
+    // Send OTP via email service
+    const userName = formData.email.split('@')[0]
+    const result = await sendOTPEmail(formData.email, newOTP, userName)
+    
+    if (result.success) {
+      toast.success(`OTP sent to ${formData.email}!\nCheck your inbox.`)
+    } else {
+      // Fallback: Show OTP in console for testing
+      console.log('OTP:', newOTP)
+      toast.success(`OTP sent to ${formData.email}!\nCheck console (Email service not configured)`)
+    }
   }
 
   const handleSubmit = async (e) => {
