@@ -152,17 +152,28 @@ const AdminPanel = () => {
 
   // Settings handlers
   const handleSaveSettings = () => {
+    console.log('Saving settings:', settingsForm)
+    
     // Save all social media settings
     Object.keys(settingsForm).forEach(key => {
       if (['facebook', 'twitter', 'instagram', 'discord', 'youtube', 'whatsapp'].includes(key)) {
+        console.log(`Updating ${key}:`, settingsForm[key])
         updateSocialMedia(key, settingsForm[key])
       } else if (key === 'supportEmail') {
+        console.log('Updating support email:', settingsForm[key])
         updateSupport('email', settingsForm[key])
       } else if (key === 'supportPhone') {
+        console.log('Updating support phone:', settingsForm[key])
         updateSupport('phone', settingsForm[key])
       }
     })
-    toast.success('Settings saved successfully!')
+    
+    // Log the store state after update
+    setTimeout(() => {
+      console.log('Store after save:', useSettingsStore.getState())
+    }, 100)
+    
+    toast.success('Settings saved successfully! Refresh page to see changes.')
   }
 
   const handleUpdateSettingsForm = (platform, field, value) => {
