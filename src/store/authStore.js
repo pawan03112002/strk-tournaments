@@ -11,6 +11,7 @@ import {
   reauthenticateWithCredential
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
+import { auth, db } from '../config/firebase'
 
 const useAuthStore = create((set, get) => ({
   user: null,
