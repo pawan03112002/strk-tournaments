@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Mail, Phone, Trophy, Download, Search, Filter, Calendar, Shield, ChevronRight, Crown, Target, Medal, Edit2, Trash2, CheckSquare, X, Save, ArrowUpCircle, ChevronLeft, Undo2, Settings, Lock, Facebook, Twitter, Instagram, MessageCircle, Youtube, Eye, EyeOff } from 'lucide-react'
 import useTournamentStore from '../store/tournamentStore'
@@ -70,6 +70,14 @@ const AdminPanel = () => {
   const [enteredOTP, setEnteredOTP] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [otpExpiry, setOtpExpiry] = useState(null)
+
+  // Ensure admin email is updated to correct email on mount
+  useEffect(() => {
+    const correctEmail = 'strk.tournaments@gmail.com'
+    if (adminEmail !== correctEmail) {
+      updateAdminEmail(correctEmail)
+    }
+  }, [adminEmail, updateAdminEmail])
 
   // Stage progression order
   const stageProgression = {
