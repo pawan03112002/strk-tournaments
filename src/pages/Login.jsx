@@ -304,6 +304,12 @@ const Login = () => {
                   <button type="submit" className="w-full btn-primary">
                     Send Reset Link
                   </button>
+                  
+                  <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-yellow-400 text-xs text-center">
+                      ⚠️ <strong>Important:</strong> If you don't see the email in your inbox, please check your <strong>Spam/Junk folder</strong>. Password reset emails might be filtered.
+                    </p>
+                  </div>
                 </form>
               </div>
             </motion.div>
