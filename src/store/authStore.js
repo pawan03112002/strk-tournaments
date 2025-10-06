@@ -1,16 +1,16 @@
 import { create } from 'zustand'
 import { 
-  createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
   updateProfile,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
-import { auth, db } from '../config/firebase'
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -166,24 +166,38 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Update user password (for forgot password)
+  // Send password reset email using Firebase
+  sendPasswordReset: async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email)
+      return { success: true }
+    } catch (error) {
+      console.error('Password reset error:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Update user password (after OTP verification - stores in Firestore for later)
   updateUserPassword: async (email, newPassword) => {
     try {
-      // This is a simplified version - in production, use Firebase's password reset
-      // For now, we'll update it when the user logs in next time
+      // Store the verified password reset request
       const usersSnapshot = await getDocs(collection(db, 'users'))
       const userDoc = usersSnapshot.docs.find(doc => doc.data().email === email)
       
       if (userDoc) {
         await updateDoc(doc(db, 'users', userDoc.id), {
-          passwordResetPending: true,
-          newPassword: newPassword, // In production, hash this!
-          updatedAt: new Date().toISOString()
+          pendingPasswordReset: {
+            newPassword: newPassword,
+            verified: true,
+            timestamp: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 min expiry
+          }
         })
       }
       
       return { success: true }
     } catch (error) {
+      console.error('Error storing password reset:', error)
       return { success: false, error: error.message }
     }
   },

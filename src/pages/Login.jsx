@@ -24,7 +24,7 @@ const Login = () => {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
   const users = useAuthStore((state) => state.users)
-  const updateUserPassword = useAuthStore((state) => state.updateUserPassword)
+  const sendPasswordReset = useAuthStore((state) => state.sendPasswordReset)
   const fetchUsers = useAuthStore((state) => state.fetchUsers)
 
   // Fetch users on mount
@@ -79,27 +79,17 @@ const Login = () => {
       return
     }
     
-    const user = users.find(u => u.email.toLowerCase() === resetEmail.toLowerCase())
-    if (!user) {
-      toast.error('No account found with this email!')
-      return
-    }
-
-    const newOTP = generateOTP()
-    setGeneratedOTP(newOTP)
-    setOtpExpiry(Date.now() + 5 * 60 * 1000)
+    toast.loading('Sending password reset email...', { id: 'reset' })
     
-    const userName = resetEmail.split('@')[0]
-    const result = await sendOTPEmail(resetEmail, newOTP, userName)
+    const result = await sendPasswordReset(resetEmail)
     
     if (result.success) {
-      toast.success(`OTP sent to ${resetEmail}!`)
+      toast.success(`Password reset link sent to ${resetEmail}! Check your inbox.`, { id: 'reset', duration: 6000 })
+      setForgotPasswordMode(false)
+      setResetEmail('')
     } else {
-      console.log('OTP:', newOTP)
-      toast.success(`OTP sent! Check console (Email service not configured)`)
+      toast.error('Failed to send reset email. Please try again.', { id: 'reset' })
     }
-    
-    setResetStep(2)
   }
 
   const handleVerifyOTP = (e) => {
@@ -286,118 +276,35 @@ const Login = () => {
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Reset Password</h3>
                   <p className="text-gray-400 text-sm">
-                    {resetStep === 1 && 'Enter your Gmail to receive OTP'}
-                    {resetStep === 2 && 'Enter the OTP sent to your email'}
-                    {resetStep === 3 && 'Create a new password'}
+                    Enter your Gmail and we'll send you a password reset link
                   </p>
                 </div>
 
-                {/* Step 1: Enter Email */}
-                {resetStep === 1 && (
-                  <form onSubmit={handleForgotPassword} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Gmail Address <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="email"
-                          value={resetEmail}
-                          onChange={(e) => setResetEmail(e.target.value)}
-                          className="input-field pl-12"
-                          placeholder="yourname@gmail.com"
-                          required
-                        />
-                      </div>
-                      <p className="text-xs text-yellow-400 mt-1">
-                        ⚠️ Only Gmail addresses are accepted
-                      </p>
+                {/* Enter Email to Send Reset Link */}
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Gmail Address <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        className="input-field pl-12"
+                        placeholder="yourname@gmail.com"
+                        required
+                      />
                     </div>
-                    <button type="submit" className="w-full btn-primary">
-                      Send OTP
-                    </button>
-                  </form>
-                )}
-
-                {/* Step 2: Verify OTP */}
-                {resetStep === 2 && (
-                  <form onSubmit={handleVerifyOTP} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Enter OTP
-                      </label>
-                      <div className="relative">
-                        <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="text"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value.replace(/\\D/g, '').slice(0, 6))}
-                          className="input-field pl-12 text-center text-2xl tracking-widest"
-                          placeholder="000000"
-                          maxLength={6}
-                          required
-                        />
-                      </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-xs text-gray-400">
-                          {timeRemaining > 0 ? (
-                            <>
-                              <span className="text-green-400">⏱ Expires in: </span>
-                              <span className="font-mono">{Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}</span>
-                            </>
-                          ) : (
-                            <span className="text-red-400">⚠️ OTP Expired</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <button type="submit" className="w-full btn-primary" disabled={otp.length !== 6}>
-                      Verify OTP
-                    </button>
-                  </form>
-                )}
-
-                {/* Step 3: New Password */}
-                {resetStep === 3 && (
-                  <form onSubmit={handleResetPassword} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        New Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="input-field pl-12"
-                          placeholder="Enter new password"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Confirm New Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          type="password"
-                          value={confirmNewPassword}
-                          onChange={(e) => setConfirmNewPassword(e.target.value)}
-                          className="input-field pl-12"
-                          placeholder="Confirm new password"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <button type="submit" className="w-full btn-primary">
-                      Reset Password
-                    </button>
-                  </form>
-                )}
+                    <p className="text-xs text-gray-400 mt-2">
+                      🔐 We'll send you a secure link to reset your password
+                    </p>
+                  </div>
+                  <button type="submit" className="w-full btn-primary">
+                    Send Reset Link
+                  </button>
+                </form>
               </div>
             </motion.div>
           </motion.div>
