@@ -14,65 +14,118 @@ const getStripe = () => {
 }
 
 /**
- * Process Razorpay Payment (for INR)
+ * Process Razorpay Payment (for INR) - Production Mode with Backend Verification
  * @param {object} orderDetails - Order details
  */
-export const processRazorpayPayment = (orderDetails) => {
-  return new Promise((resolve, reject) => {
-    // Check if Razorpay is loaded
-    if (typeof window.Razorpay === 'undefined') {
-      reject(new Error('Razorpay SDK not loaded. Please refresh the page.'))
-      return
-    }
-
-    const options = {
-      key: RAZORPAY_KEY,
-      amount: orderDetails.amount * 100, // Convert to paise
-      currency: 'INR',
-      name: 'STRK Tournaments',
-      description: `Tournament Registration - ${orderDetails.teamName}`,
-      image: '/logo.png', // Your logo
-      // Note: order_id removed for test mode - works without backend
-      handler: function (response) {
-        resolve({
-          success: true,
-          paymentId: response.razorpay_payment_id,
-          orderId: orderDetails.orderId, // Use client-generated ID
-          signature: response.razorpay_signature
-        })
+export const processRazorpayPayment = async (orderDetails) => {
+  try {
+    // Step 1: Create order on backend
+    const orderResponse = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      prefill: {
-        name: orderDetails.name || '',
-        email: orderDetails.email || '',
-        contact: orderDetails.phone || ''
-      },
-      notes: {
-        team_name: orderDetails.teamName,
-        tournament: 'Free Fire PC Tournament'
-      },
-      theme: {
-        color: '#DC2626' // Red theme matching your website
-      },
-      modal: {
-        ondismiss: function() {
-          reject(new Error('Payment cancelled by user'))
+      body: JSON.stringify({
+        amount: orderDetails.amount,
+        currency: orderDetails.currency || 'INR',
+        receipt: `receipt_${orderDetails.orderId}`,
+        notes: {
+          teamName: orderDetails.teamName,
+          contactEmail: orderDetails.contactEmail
         }
-      }
-    }
-
-    const rzp = new window.Razorpay(options)
-    
-    rzp.on('payment.failed', function (response) {
-      reject({
-        error: true,
-        code: response.error.code,
-        description: response.error.description,
-        reason: response.error.reason
       })
     })
 
-    rzp.open()
-  })
+    const orderData = await orderResponse.json()
+
+    if (!orderData.success) {
+      throw new Error(orderData.error || 'Failed to create order')
+    }
+
+    // Step 2: Open Razorpay checkout with backend order ID
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof window.Razorpay === 'undefined') {
+          throw new Error('Razorpay SDK not loaded')
+        }
+
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'STRK Tournaments',
+          description: `Tournament Registration - ${orderDetails.teamName}`,
+          image: '/logo.png',
+          order_id: orderData.orderId,
+          prefill: {
+            email: orderDetails.contactEmail,
+            contact: orderDetails.contactNumber
+          },
+          notes: {
+            team_name: orderDetails.teamName,
+            tournament: 'Free Fire PC Tournament'
+          },
+          theme: {
+            color: '#DC2626'
+          },
+          handler: async function (response) {
+            try {
+              // Step 3: Verify payment on backend
+              const verifyResponse = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              })
+
+              const verifyData = await verifyResponse.json()
+
+              if (verifyData.success) {
+                resolve({
+                  success: true,
+                  paymentId: response.razorpay_payment_id,
+                  orderId: response.razorpay_order_id,
+                  signature: response.razorpay_signature
+                })
+              } else {
+                throw new Error('Payment verification failed')
+              }
+            } catch (error) {
+              reject(new Error('Payment verification failed: ' + error.message))
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              reject(new Error('Payment cancelled by user'))
+            }
+          }
+        }
+
+        const rzp = new window.Razorpay(options)
+        
+        rzp.on('payment.failed', function (response) {
+          reject({
+            error: true,
+            code: response.error.code,
+            description: response.error.description,
+            reason: response.error.reason
+          })
+        })
+
+        rzp.open()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  } catch (error) {
+    console.error('Payment error:', error)
+    throw error
+  }
 }
 
 /**
