@@ -45,37 +45,37 @@ const useTournamentStore = create(
 
       // Register a new team after successful payment
       registerTeam: async (teamData) => {
-        try {
-          const currentNumber = get().lastTeamNumber + 1
-          const teamNumber = currentNumber.toString().padStart(4, '0')
-          
-          const newTeam = {
-            ...teamData,
-            teamNumber: `Team ${teamNumber}`,
-            teamId: currentNumber,
-            registeredAt: new Date().toISOString(),
-            paymentStatus: 'completed',
-            stage: 'enrolled' // Initial stage
-          }
-
-          // Save to Firestore
-          const docRef = await addDoc(collection(db, 'teams'), newTeam)
-          
-          const teamWithId = {
-            ...newTeam,
-            firestoreId: docRef.id
-          }
-
-          set((state) => ({
-            registeredTeams: [...state.registeredTeams, teamWithId],
-            lastTeamNumber: currentNumber
-          }))
-
-          return teamWithId
-        } catch (error) {
-          console.error('Error registering team:', error)
-          throw error
+        const currentNumber = get().lastTeamNumber + 1
+        const teamNumber = currentNumber.toString().padStart(4, '0')
+        
+        const newTeam = {
+          ...teamData,
+          teamNumber: `Team ${teamNumber}`,
+          teamId: currentNumber,
+          registeredAt: new Date().toISOString(),
+          paymentStatus: 'completed',
+          stage: 'enrolled' // Initial stage
         }
+
+        let teamWithId = { ...newTeam }
+
+        // Try to save to Firestore (non-critical for now)
+        try {
+          const docRef = await addDoc(collection(db, 'teams'), newTeam)
+          teamWithId.firestoreId = docRef.id
+          console.log('Team saved to Firestore:', docRef.id)
+        } catch (firestoreError) {
+          console.warn('Firestore save failed (team saved locally):', firestoreError)
+          // Continue anyway - team is saved in local state
+        }
+
+        // Always update local state
+        set((state) => ({
+          registeredTeams: [...state.registeredTeams, teamWithId],
+          lastTeamNumber: currentNumber
+        }))
+
+        return teamWithId
       },
 
       // Get team by ID

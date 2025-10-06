@@ -188,42 +188,51 @@ const TournamentRegistration = () => {
 
       if (paymentResult.success) {
         // Payment successful - Register team
-        const registeredTeam = await registerTeam({
-          teamName: formData.teamName,
-          players: [
-            formData.player1Username,
-            formData.player2Username,
-            formData.player3Username,
-            formData.player4Username
-          ],
-          contactEmail: formData.contactEmail,
-          contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
-          teamLogo: logoPreview || null,
-          currency: currency,
-          amount: formatCurrency(amount, currency),
-          userId: user?.id,
-          paymentId: paymentResult.paymentId || paymentResult.orderId,
-          paymentStatus: 'completed'
-        })
+        try {
+          const registeredTeam = await registerTeam({
+            teamName: formData.teamName,
+            players: [
+              formData.player1Username,
+              formData.player2Username,
+              formData.player3Username,
+              formData.player4Username
+            ],
+            contactEmail: formData.contactEmail,
+            contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
+            teamLogo: logoPreview || null,
+            currency: currency,
+            amount: formatCurrency(amount, currency),
+            userId: user?.id,
+            paymentId: paymentResult.paymentId || paymentResult.orderId,
+            paymentStatus: 'completed'
+          })
 
-        setIsProcessingPayment(false)
-        setPaymentSuccess(true)
-        setAssignedTeamNumber(registeredTeam.teamNumber)
-        
-        toast.success(`Payment successful! You are ${registeredTeam.teamNumber}`, { id: 'payment' })
-        
-        // Send confirmation email
-        await sendPaymentConfirmation(formData.contactEmail, {
-          teamName: formData.teamName,
-          teamNumber: registeredTeam.teamNumber,
-          amount: formatCurrency(amount, currency),
-          transactionId: paymentResult.paymentId || paymentResult.orderId
-        })
-        
-        // Auto redirect after 5 seconds
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 5000)
+          setIsProcessingPayment(false)
+          setPaymentSuccess(true)
+          setAssignedTeamNumber(registeredTeam.teamNumber)
+          
+          toast.success(`Payment successful! You are ${registeredTeam.teamNumber}`, { id: 'payment' })
+          
+          // Send confirmation email (non-blocking)
+          sendPaymentConfirmation(formData.contactEmail, {
+            teamName: formData.teamName,
+            teamNumber: registeredTeam.teamNumber,
+            amount: formatCurrency(amount, currency),
+            transactionId: paymentResult.paymentId || paymentResult.orderId
+          }).catch(err => console.warn('Email send failed:', err))
+          
+          // Auto redirect after 3 seconds
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 3000)
+        } catch (regError) {
+          console.error('Registration error after payment:', regError)
+          toast.error('Payment received but registration failed. Contact support with payment ID: ' + paymentResult.paymentId, { 
+            id: 'payment',
+            duration: 10000 
+          })
+          setIsProcessingPayment(false)
+        }
       }
     } catch (error) {
       setIsProcessingPayment(false)
