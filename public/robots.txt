@@ -1,0 +1,12 @@
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Disallow admin panel
+Disallow: /jai_shree_ram
+
+# Sitemap location
+Sitemap: https://strk-tournaments.vercel.app/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 10
