@@ -32,12 +32,12 @@ export const processRazorpayPayment = (orderDetails) => {
       name: 'STRK Tournaments',
       description: `Tournament Registration - ${orderDetails.teamName}`,
       image: '/logo.png', // Your logo
-      order_id: orderDetails.orderId, // This should come from your backend
+      // Note: order_id removed for test mode - works without backend
       handler: function (response) {
         resolve({
           success: true,
           paymentId: response.razorpay_payment_id,
-          orderId: response.razorpay_order_id,
+          orderId: orderDetails.orderId, // Use client-generated ID
           signature: response.razorpay_signature
         })
       },
