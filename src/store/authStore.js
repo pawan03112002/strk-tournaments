@@ -55,14 +55,18 @@ const useAuthStore = create((set, get) => ({
       // Update display name
       await updateProfile(user, { displayName: username })
       
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        username,
-        email,
-        createdAt: new Date().toISOString(),
-        avatar: '👤',
-        role: 'user'
-      })
+      // Try to create user document in Firestore (but don't fail if it doesn't work)
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          username,
+          email,
+          createdAt: new Date().toISOString(),
+          avatar: '👤',
+          role: 'user'
+        })
+      } catch (firestoreError) {
+        console.warn('Firestore write failed (non-critical):', firestoreError)
+      }
       
       set({ 
         user: {
@@ -91,15 +95,22 @@ const useAuthStore = create((set, get) => ({
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
       
-      // Fetch user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid))
-      const userData = userDoc.exists() ? userDoc.data() : {}
+      // Try to fetch user data from Firestore (but don't fail if it doesn't work)
+      let userData = {}
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        userData = userDoc.exists() ? userDoc.data() : {}
+      } catch (firestoreError) {
+        console.warn('Firestore read failed (non-critical):', firestoreError)
+      }
       
       set({ 
         user: {
           uid: user.uid,
           email: user.email,
-          displayName: user.displayName,
+          displayName: user.displayName || email.split('@')[0],
+          username: user.displayName || email.split('@')[0],
+          avatar: '👤',
           ...userData
         },
         loading: false 
