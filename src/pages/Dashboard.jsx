@@ -10,23 +10,14 @@ const Dashboard = () => {
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
   
-  // Safely get team
-  let myTeam = null
-  let totalTeams = 0
-  try {
-    const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
-    const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
-    
-    if (user?.email && getTeamByEmail) {
-      myTeam = getTeamByEmail(user.email)
-    }
-    
-    if (getTotalTeams) {
-      totalTeams = getTotalTeams()
-    }
-  } catch (error) {
-    console.log('Could not fetch team:', error)
-  }
+  // Get team data from store - using hooks for reactivity
+  const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
+  const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
+  const registeredTeams = useTournamentStore((state) => state.registeredTeams)
+  
+  // Calculate values - this will re-run when store updates
+  const myTeam = user?.email ? getTeamByEmail(user.email) : null
+  const totalTeams = getTotalTeams()
 
   if (!user) {
     navigate('/login')
