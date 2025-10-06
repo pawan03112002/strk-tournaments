@@ -343,14 +343,15 @@ const AdminPanel = () => {
   // Simple admin authentication check (you can enhance this later)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
-  const ADMIN_PASSWORD = 'admin123' // Change this to your secure password
+  const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
 
   const handleLogin = (e) => {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
+    if (verifyAdminPassword(password)) {
       setIsAuthenticated(true)
+      toast.success('Login successful!')
     } else {
-      alert('Invalid password!')
+      toast.error('Invalid password!')
     }
   }
 

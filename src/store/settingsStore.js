@@ -22,7 +22,7 @@ const useSettingsStore = create(
 
       // Admin Credentials
       adminPassword: 'admin123', // Default password
-      adminEmail: 'admin@strktournaments.com', // For password recovery
+      adminEmail: 'strk.tournaments@gmail.com', // For password recovery
 
       // Update social media
       updateSocialMedia: (platform, data) => {
