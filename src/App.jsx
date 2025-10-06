@@ -11,6 +11,10 @@ import Downloads from './pages/Downloads'
 import TournamentRegistration from './pages/TournamentRegistration'
 import AdminPanel from './pages/AdminPanel'
 import TermsAndConditions from './pages/TermsAndConditions'
+import RefundPolicy from './pages/RefundPolicy'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import ShippingPolicy from './pages/ShippingPolicy'
+import ContactUs from './pages/ContactUs'
 
 function App() {
   return (
@@ -27,6 +31,13 @@ function App() {
           <Route path="/tournament-registration" element={<TournamentRegistration />} />
           <Route path="/jai_shree_ram" element={<AdminPanel />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/cancellation-refunds" element={<RefundPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/shipping" element={<ShippingPolicy />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/contact" element={<ContactUs />} />
         </Routes>
         <Footer />
         <Toaster 
