@@ -188,7 +188,7 @@ const TournamentRegistration = () => {
 
       if (paymentResult.success) {
         // Payment successful - Register team
-        const registeredTeam = registerTeam({
+        const registeredTeam = await registerTeam({
           teamName: formData.teamName,
           players: [
             formData.player1Username,
