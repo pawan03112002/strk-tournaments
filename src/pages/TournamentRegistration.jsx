@@ -22,6 +22,14 @@ const TournamentRegistration = () => {
   const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
   const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
   
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      toast.error('Please login to register for tournaments')
+      navigate('/login')
+    }
+  }, [user, navigate])
+
   const [currency, setCurrency] = useState('INR')
   const [teamLogo, setTeamLogo] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
@@ -227,6 +235,11 @@ const TournamentRegistration = () => {
         toast.error(error.description || 'Payment failed. Please try again.', { id: 'payment' })
       }
     }
+  }
+
+  // Don't render if not authenticated (while redirecting)
+  if (!user) {
+    return null
   }
 
   return (
