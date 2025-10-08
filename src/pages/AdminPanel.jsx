@@ -8,15 +8,17 @@ import toast from 'react-hot-toast'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
-  const registeredTeams = useTournamentStore((state) => state.registeredTeams)
-  const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
-  const clearAllTeams = useTournamentStore((state) => state.clearAllTeams)
-  const updateTeamStage = useTournamentStore((state) => state.updateTeamStage)
-  const deleteTeam = useTournamentStore((state) => state.deleteTeam)
-  const updateTeamDetails = useTournamentStore((state) => state.updateTeamDetails)
-  const bulkUpdateStages = useTournamentStore((state) => state.bulkUpdateStages)
-  const bulkDeleteTeams = useTournamentStore((state) => state.bulkDeleteTeams)
-  const registerTeam = useTournamentStore((state) => state.registerTeam)
+  
+  // Get all store values at once to ensure consistent hook calls
+  const registeredTeams = useTournamentStore((state) => state?.registeredTeams) || []
+  const getTotalTeams = useTournamentStore((state) => state?.getTotalTeams) || (() => 0)
+  const clearAllTeams = useTournamentStore((state) => state?.clearAllTeams) || (() => {})
+  const updateTeamStage = useTournamentStore((state) => state?.updateTeamStage) || (() => {})
+  const deleteTeam = useTournamentStore((state) => state?.deleteTeam) || (() => {})
+  const updateTeamDetails = useTournamentStore((state) => state?.updateTeamDetails) || (() => {})
+  const bulkUpdateStages = useTournamentStore((state) => state?.bulkUpdateStages) || (() => {})
+  const bulkDeleteTeams = useTournamentStore((state) => state?.bulkDeleteTeams) || (() => {})
+  const registerTeam = useTournamentStore((state) => state?.registerTeam) || (async () => {})
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStage, setFilterStage] = useState('all')
   const [selectedTeams, setSelectedTeams] = useState([])
@@ -37,17 +39,17 @@ const AdminPanel = () => {
     phoneNumber: ''
   })
   
-  // Settings store
-  const socialMedia = useSettingsStore((state) => state.socialMedia)
-  const support = useSettingsStore((state) => state.support)
-  const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
-  const updateSocialMedia = useSettingsStore((state) => state.updateSocialMedia)
-  const updateSupport = useSettingsStore((state) => state.updateSupport)
-  const changeAdminPassword = useSettingsStore((state) => state.changeAdminPassword)
-  const updateAdminEmail = useSettingsStore((state) => state.updateAdminEmail)
-  const adminEmail = useSettingsStore((state) => state.adminEmail)
-  const resetAdminPassword = useSettingsStore((state) => state.resetAdminPassword)
-  const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
+  // Settings store - with fallbacks to prevent hook errors
+  const socialMedia = useSettingsStore((state) => state?.socialMedia) || {}
+  const support = useSettingsStore((state) => state?.support) || {}
+  const tournamentSettings = useSettingsStore((state) => state?.tournamentSettings) || { registrationFee: 500, maxTeams: 100, currency: 'INR' }
+  const updateSocialMedia = useSettingsStore((state) => state?.updateSocialMedia) || (() => {})
+  const updateSupport = useSettingsStore((state) => state?.updateSupport) || (() => {})
+  const changeAdminPassword = useSettingsStore((state) => state?.changeAdminPassword) || (() => {})
+  const updateAdminEmail = useSettingsStore((state) => state?.updateAdminEmail) || (() => {})
+  const adminEmail = useSettingsStore((state) => state?.adminEmail) || 'strk.tournaments@gmail.com'
+  const resetAdminPassword = useSettingsStore((state) => state?.resetAdminPassword) || (() => {})
+  const verifyAdminPassword = useSettingsStore((state) => state?.verifyAdminPassword) || (() => false)
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
