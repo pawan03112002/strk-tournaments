@@ -466,22 +466,24 @@ const AdminPanel = () => {
         amount: 0 // ₹0 for manual entry
       })
 
-      toast.success(`Team registered successfully! ${newTeam.teamNumber}`, { id: 'manual-register' })
+      toast.success(`✅ Team ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 3000 })
       
-      // Reset form and close modal
-      setManualTeamForm({
-        teamName: '',
-        player1Username: '',
-        player2Username: '',
-        player3Username: '',
-        player4Username: '',
-        contactEmail: '',
-        phoneNumber: ''
-      })
-      setShowManualAddModal(false)
+      // Reset form and close modal after short delay
+      setTimeout(() => {
+        setManualTeamForm({
+          teamName: '',
+          player1Username: '',
+          player2Username: '',
+          player3Username: '',
+          player4Username: '',
+          contactEmail: '',
+          phoneNumber: ''
+        })
+        setShowManualAddModal(false)
+      }, 500)
     } catch (error) {
       console.error('Manual registration error:', error)
-      toast.error('Failed to register team!', { id: 'manual-register' })
+      toast.error(`Registration failed: ${error.message || 'Unknown error'}`, { id: 'manual-register' })
     }
   }
 
