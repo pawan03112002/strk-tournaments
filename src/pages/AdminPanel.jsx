@@ -93,13 +93,14 @@ const AdminPanel = () => {
   const [otpSent, setOtpSent] = useState(false)
   const [otpExpiry, setOtpExpiry] = useState(null)
 
-  // Ensure admin email is updated to correct email on mount
+  // Ensure admin email is updated to correct email on mount (only once)
   useEffect(() => {
     const correctEmail = 'strk.tournaments@gmail.com'
     if (adminEmail !== correctEmail) {
       updateAdminEmail(correctEmail)
     }
-  }, [adminEmail, updateAdminEmail])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Stage progression order
   const stageProgression = {
@@ -481,21 +482,25 @@ const AdminPanel = () => {
       
       console.log('Team registered successfully:', newTeam)
 
-      toast.success(`✅ ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 3000 })
+      // Ensure we're on the teams tab to see the new team
+      setActiveTab('teams')
       
-      // Reset form and close modal after short delay
-      setTimeout(() => {
-        setManualTeamForm({
-          teamName: '',
-          player1Username: '',
-          player2Username: '',
-          player3Username: '',
-          player4Username: '',
-          contactEmail: '',
-          phoneNumber: ''
-        })
-        setShowManualAddModal(false)
-      }, 1000)
+      // Close modal immediately
+      setShowManualAddModal(false)
+      
+      // Reset form
+      setManualTeamForm({
+        teamName: '',
+        player1Username: '',
+        player2Username: '',
+        player3Username: '',
+        player4Username: '',
+        contactEmail: '',
+        phoneNumber: ''
+      })
+      
+      // Show success message
+      toast.success(`✅ ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 4000 })
     } catch (error) {
       console.error('Manual registration error:', error)
       toast.error(`Registration failed: ${error?.message || 'Please check console for details'}`, { id: 'manual-register' })
