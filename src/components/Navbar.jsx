@@ -25,13 +25,21 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <img 
-              src="/strk-logo.png" 
-              alt="STRK Logo" 
-              className="h-12 w-auto transition-transform duration-300 group-hover:scale-110"
-            />
-            <span className="text-xl font-bold text-white hidden sm:block">
-              TOURNAMENTS
+            {/* Try to load image, fallback to Trophy icon */}
+            <div className="relative h-12 w-12 flex items-center justify-center">
+              <img 
+                src="/strk-logo.png" 
+                alt="STRK Logo" 
+                className="h-full w-auto transition-transform duration-300 group-hover:scale-110"
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                  e.target.nextElementSibling.style.display = 'block'
+                }}
+              />
+              <Trophy className="w-10 h-10 text-red-500 group-hover:rotate-12 transition-transform duration-300 hidden" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+              STRK TOURNAMENTS
             </span>
           </Link>
 
