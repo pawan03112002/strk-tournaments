@@ -433,16 +433,16 @@ const AdminPanel = () => {
     e.preventDefault()
     
     // Validate form
-    if (!manualTeamForm.teamName) {
+    if (!manualTeamForm.teamName.trim()) {
       toast.error('Team name is required!')
       return
     }
-    if (!manualTeamForm.player1Username || !manualTeamForm.player2Username || 
-        !manualTeamForm.player3Username || !manualTeamForm.player4Username) {
+    if (!manualTeamForm.player1Username.trim() || !manualTeamForm.player2Username.trim() || 
+        !manualTeamForm.player3Username.trim() || !manualTeamForm.player4Username.trim()) {
       toast.error('All 4 player usernames are required!')
       return
     }
-    if (!manualTeamForm.contactEmail) {
+    if (!manualTeamForm.contactEmail.trim()) {
       toast.error('Contact email is required!')
       return
     }
@@ -458,22 +458,29 @@ const AdminPanel = () => {
     try {
       toast.loading('Registering team...', { id: 'manual-register' })
       
-      // Register team using existing function (bypasses payment)
-      const newTeam = await registerTeam({
-        teamName: manualTeamForm.teamName,
+      // Prepare team data
+      const teamData = {
+        teamName: manualTeamForm.teamName.trim(),
         players: [
-          { username: manualTeamForm.player1Username },
-          { username: manualTeamForm.player2Username },
-          { username: manualTeamForm.player3Username },
-          { username: manualTeamForm.player4Username }
+          { username: manualTeamForm.player1Username.trim() },
+          { username: manualTeamForm.player2Username.trim() },
+          { username: manualTeamForm.player3Username.trim() },
+          { username: manualTeamForm.player4Username.trim() }
         ],
-        contactEmail: manualTeamForm.contactEmail,
-        phoneNumber: manualTeamForm.phoneNumber || 'N/A',
+        contactEmail: manualTeamForm.contactEmail.trim(),
+        phoneNumber: manualTeamForm.phoneNumber.trim() || 'N/A',
         paymentId: 'MANUAL_ADMIN_ENTRY',
         amount: 0 // ₹0 for manual entry
-      })
+      }
 
-      toast.success(`✅ Team ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 3000 })
+      console.log('Registering team with data:', teamData)
+      
+      // Register team using existing function (registerTeam is async)
+      const newTeam = await registerTeam(teamData)
+      
+      console.log('Team registered successfully:', newTeam)
+
+      toast.success(`✅ ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 3000 })
       
       // Reset form and close modal after short delay
       setTimeout(() => {
@@ -487,10 +494,10 @@ const AdminPanel = () => {
           phoneNumber: ''
         })
         setShowManualAddModal(false)
-      }, 500)
+      }, 1000)
     } catch (error) {
       console.error('Manual registration error:', error)
-      toast.error(`Registration failed: ${error.message || 'Unknown error'}`, { id: 'manual-register' })
+      toast.error(`Registration failed: ${error?.message || 'Please check console for details'}`, { id: 'manual-register' })
     }
   }
 
