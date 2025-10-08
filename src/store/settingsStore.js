@@ -21,7 +21,7 @@ const useSettingsStore = create(
       },
 
       // Admin Credentials
-      adminPassword: 'admin123', // Default password
+      adminPassword: 'STRK@Tournament#2025!Secure', // Default password - CHANGE THIS!
       adminEmail: 'strk.tournaments@gmail.com', // For password recovery
 
       // Tournament Settings
