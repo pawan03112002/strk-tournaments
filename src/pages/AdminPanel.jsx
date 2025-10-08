@@ -765,13 +765,14 @@ const AdminPanel = () => {
               <p className="text-gray-400">Manage tournament registrations</p>
             </div>
             <div className="flex gap-3">
-              <button
+              {/* Temporarily disabled - testing hooks issue */}
+              {/* <button
                 onClick={() => setShowManualAddModal(true)}
                 className="btn-primary flex items-center gap-2"
               >
                 <Users className="w-4 h-4" />
                 Add Team
-              </button>
+              </button> */}
               <button
                 onClick={exportToCSV}
                 className="btn-secondary flex items-center gap-2"
@@ -1733,7 +1734,8 @@ const AdminPanel = () => {
 
         </motion.div>
 
-        {/* Manual Team Registration Modal */}
+        {/* Manual Team Registration Modal - DISABLED FOR TESTING */}
+        {false && (
         <AnimatePresence>
           {showManualAddModal && (
             <motion.div
@@ -1892,6 +1894,7 @@ const AdminPanel = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
 
       </div>
     </div>
