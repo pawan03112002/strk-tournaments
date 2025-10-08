@@ -575,9 +575,11 @@ const AdminPanel = () => {
     a.click()
   }
 
-  // Login Screen
-  if (!isAuthenticated) {
-    return (
+  // Render logic - NO EARLY RETURNS to prevent hook errors
+  return (
+    <>
+      {/* Login Screen */}
+      {!isAuthenticated && (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -744,11 +746,10 @@ const AdminPanel = () => {
           </button>
         </motion.div>
       </div>
-    )
-  }
+      )}
 
-  // Admin Dashboard
-  return (
+      {/* Admin Dashboard */}
+      {isAuthenticated && (
     <div className="min-h-screen py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto mt-10">
         <motion.div
@@ -1898,6 +1899,8 @@ const AdminPanel = () => {
 
       </div>
     </div>
+      )}
+    </>
   )
 }
 
