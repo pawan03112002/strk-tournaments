@@ -8,17 +8,16 @@ import toast from 'react-hot-toast'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
-  
-  // Get all store values at once to ensure consistent hook calls
-  const registeredTeams = useTournamentStore((state) => state?.registeredTeams) || []
-  const getTotalTeams = useTournamentStore((state) => state?.getTotalTeams) || (() => 0)
-  const clearAllTeams = useTournamentStore((state) => state?.clearAllTeams) || (() => {})
-  const updateTeamStage = useTournamentStore((state) => state?.updateTeamStage) || (() => {})
-  const deleteTeam = useTournamentStore((state) => state?.deleteTeam) || (() => {})
-  const updateTeamDetails = useTournamentStore((state) => state?.updateTeamDetails) || (() => {})
-  const bulkUpdateStages = useTournamentStore((state) => state?.bulkUpdateStages) || (() => {})
-  const bulkDeleteTeams = useTournamentStore((state) => state?.bulkDeleteTeams) || (() => {})
-  const registerTeam = useTournamentStore((state) => state?.registerTeam) || (async () => {})
+  const { 
+    registeredTeams, 
+    getTotalTeams, 
+    clearAllTeams, 
+    updateTeamStage,
+    deleteTeam,
+    updateTeamDetails,
+    bulkUpdateStages,
+    bulkDeleteTeams
+  } = useTournamentStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStage, setFilterStage] = useState('all')
   const [selectedTeams, setSelectedTeams] = useState([])
@@ -27,59 +26,31 @@ const AdminPanel = () => {
   const [sortBy, setSortBy] = useState('newest')
   const [activeTab, setActiveTab] = useState('teams') // teams, settings, security
   
-  // Manual team registration modal
-  const [showManualAddModal, setShowManualAddModal] = useState(false)
-  const [manualTeamForm, setManualTeamForm] = useState({
-    teamName: '',
-    player1Username: '',
-    player2Username: '',
-    player3Username: '',
-    player4Username: '',
-    contactEmail: '',
-    phoneNumber: ''
-  })
-  
-  // Settings store - with fallbacks to prevent hook errors
-  const socialMedia = useSettingsStore((state) => state?.socialMedia) || {}
-  const support = useSettingsStore((state) => state?.support) || {}
-  const tournamentSettings = useSettingsStore((state) => state?.tournamentSettings) || { registrationFee: 500, maxTeams: 100, currency: 'INR' }
-  const updateSocialMedia = useSettingsStore((state) => state?.updateSocialMedia) || (() => {})
-  const updateSupport = useSettingsStore((state) => state?.updateSupport) || (() => {})
-  const changeAdminPassword = useSettingsStore((state) => state?.changeAdminPassword) || (() => {})
-  const updateAdminEmail = useSettingsStore((state) => state?.updateAdminEmail) || (() => {})
-  const adminEmail = useSettingsStore((state) => state?.adminEmail) || 'strk.tournaments@gmail.com'
-  const resetAdminPassword = useSettingsStore((state) => state?.resetAdminPassword) || (() => {})
-  const verifyAdminPassword = useSettingsStore((state) => state?.verifyAdminPassword) || (() => false)
+  // Settings store
+  const {
+    socialMedia,
+    support,
+    tournamentSettings,
+    updateSocialMedia,
+    updateSupport,
+    changeAdminPassword,
+    updateAdminEmail,
+    adminEmail,
+    resetAdminPassword
+  } = useSettingsStore()
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
-    facebook: '',
-    twitter: '',
-    instagram: '',
-    discord: '',
-    youtube: '',
-    whatsapp: '',
-    supportEmail: { enabled: false, address: '' },
-    supportPhone: { enabled: false, number: '' },
-    tournamentSettings: { registrationFee: 500, maxTeams: 100, currency: 'INR' }
+    facebook: socialMedia.facebook,
+    twitter: socialMedia.twitter,
+    instagram: socialMedia.instagram,
+    discord: socialMedia.discord,
+    youtube: socialMedia.youtube,
+    whatsapp: socialMedia.whatsapp,
+    supportEmail: support.email,
+    supportPhone: support.phone,
+    tournamentSettings: tournamentSettings
   })
-
-  // Update form when store values load
-  useEffect(() => {
-    if (socialMedia && support && tournamentSettings) {
-      setSettingsForm({
-        facebook: socialMedia.facebook || '',
-        twitter: socialMedia.twitter || '',
-        instagram: socialMedia.instagram || '',
-        discord: socialMedia.discord || '',
-        youtube: socialMedia.youtube || '',
-        whatsapp: socialMedia.whatsapp || '',
-        supportEmail: support.email || { enabled: false, address: '' },
-        supportPhone: support.phone || { enabled: false, number: '' },
-        tournamentSettings: tournamentSettings || { registrationFee: 500, maxTeams: 100, currency: 'INR' }
-      })
-    }
-  }, [socialMedia, support, tournamentSettings])
 
   // Security form states
   const [currentPassword, setCurrentPassword] = useState('')
@@ -430,82 +401,17 @@ const AdminPanel = () => {
       toast.error('No teams selected!')
       return
     }
-
-    if (window.confirm(`Delete ${selectedTeams.length} teams? This cannot be undone!`)) {
+    if (window.confirm(`DELETE ${selectedTeams.length} teams? This cannot be undone!`)) {
       bulkDeleteTeams(selectedTeams)
       setSelectedTeams([])
-      toast.success(`${selectedTeams.length} teams deleted!`)
-    }
-  }
-
-  // Manual team registration handler
-  const handleManualTeamRegistration = async (e) => {
-    e.preventDefault()
-    
-    // Validate form
-    if (!manualTeamForm.teamName) {
-      toast.error('Team name is required!')
-      return
-    }
-    if (!manualTeamForm.player1Username || !manualTeamForm.player2Username || 
-        !manualTeamForm.player3Username || !manualTeamForm.player4Username) {
-      toast.error('All 4 player usernames are required!')
-      return
-    }
-    if (!manualTeamForm.contactEmail) {
-      toast.error('Contact email is required!')
-      return
-    }
-
-    // Check max teams limit
-    const maxTeams = tournamentSettings?.maxTeams || 100
-    if (getTotalTeams() >= maxTeams) {
-      toast.error(`Maximum ${maxTeams} teams limit reached!`)
-      return
-    }
-
-    try {
-      toast.loading('Registering team...', { id: 'manual-register' })
-      
-      // Register team using existing function (bypasses payment)
-      const newTeam = await registerTeam({
-        teamName: manualTeamForm.teamName,
-        players: [
-          { username: manualTeamForm.player1Username },
-          { username: manualTeamForm.player2Username },
-          { username: manualTeamForm.player3Username },
-          { username: manualTeamForm.player4Username }
-        ],
-        contactEmail: manualTeamForm.contactEmail,
-        phoneNumber: manualTeamForm.phoneNumber || 'N/A',
-        paymentId: 'MANUAL_ADMIN_ENTRY',
-        amount: 0 // ₹0 for manual entry
-      })
-
-      toast.success(`✅ Team ${newTeam.teamNumber} registered successfully!`, { id: 'manual-register', duration: 3000 })
-      
-      // Reset form and close modal after short delay
-      setTimeout(() => {
-        setManualTeamForm({
-          teamName: '',
-          player1Username: '',
-          player2Username: '',
-          player3Username: '',
-          player4Username: '',
-          contactEmail: '',
-          phoneNumber: ''
-        })
-        setShowManualAddModal(false)
-      }, 500)
-    } catch (error) {
-      console.error('Manual registration error:', error)
-      toast.error(`Registration failed: ${error.message || 'Unknown error'}`, { id: 'manual-register' })
+      toast.success(`${selectedTeams.length} teams deleted.`)
     }
   }
 
   // Simple admin authentication check (you can enhance this later)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
+  const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -518,12 +424,12 @@ const AdminPanel = () => {
   }
 
   // Filter and sort teams
-  const filteredTeams = (registeredTeams || [])
+  const filteredTeams = registeredTeams
     .filter(team => {
       const matchesSearch = 
-        (team.teamName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (team.teamNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (team.contactEmail || '').toLowerCase().includes(searchQuery.toLowerCase())
+        team.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        team.teamNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        team.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())
       
       const matchesStage = filterStage === 'all' || team.stage === filterStage
       
@@ -548,18 +454,18 @@ const AdminPanel = () => {
   const exportToCSV = () => {
     const headers = ['Team Number', 'Team Name', 'Player 1', 'Player 2', 'Player 3', 'Player 4', 'Contact Email', 'Contact Number', 'Payment Amount', 'Stage', 'Registration Date']
     
-    const rows = (registeredTeams || []).map(team => [
-      team.teamNumber || '',
-      team.teamName || '',
-      team.players?.[0]?.username || team.players?.[0] || '',
-      team.players?.[1]?.username || team.players?.[1] || '',
-      team.players?.[2]?.username || team.players?.[2] || '',
-      team.players?.[3]?.username || team.players?.[3] || '',
-      team.contactEmail || '',
-      team.phoneNumber || team.contactNumber || '',
-      team.amount || 0,
-      team.stage || 'enrolled',
-      team.registeredAt ? new Date(team.registeredAt).toLocaleString() : ''
+    const rows = registeredTeams.map(team => [
+      team.teamNumber,
+      team.teamName,
+      team.players[0],
+      team.players[1],
+      team.players[2],
+      team.players[3],
+      team.contactEmail,
+      team.contactNumber,
+      team.amount,
+      team.stage,
+      new Date(team.registeredAt).toLocaleString()
     ])
 
     const csvContent = [
@@ -575,11 +481,9 @@ const AdminPanel = () => {
     a.click()
   }
 
-  // Render logic - NO EARLY RETURNS to prevent hook errors
-  return (
-    <>
-      {/* Login Screen */}
-      {!isAuthenticated && (
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -746,10 +650,11 @@ const AdminPanel = () => {
           </button>
         </motion.div>
       </div>
-      )}
+    )
+  }
 
-      {/* Admin Dashboard */}
-      {isAuthenticated && (
+  // Admin Dashboard
+  return (
     <div className="min-h-screen py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto mt-10">
         <motion.div
@@ -757,8 +662,6 @@ const AdminPanel = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Debug info */}
-          {console.log('Admin Panel Rendering. Teams:', registeredTeams?.length || 0)}
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
@@ -766,14 +669,6 @@ const AdminPanel = () => {
               <p className="text-gray-400">Manage tournament registrations</p>
             </div>
             <div className="flex gap-3">
-              {/* Temporarily disabled - testing hooks issue */}
-              {/* <button
-                onClick={() => setShowManualAddModal(true)}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Users className="w-4 h-4" />
-                Add Team
-              </button> */}
               <button
                 onClick={exportToCSV}
                 className="btn-secondary flex items-center gap-2"
@@ -1734,173 +1629,8 @@ const AdminPanel = () => {
           )}
 
         </motion.div>
-
-        {/* Manual Team Registration Modal - DISABLED FOR TESTING */}
-        {false && (
-        <AnimatePresence>
-          {showManualAddModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-              onClick={() => setShowManualAddModal(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <Users className="w-6 h-6 text-red-500" />
-                    Manual Team Registration
-                  </h2>
-                  <button
-                    onClick={() => setShowManualAddModal(false)}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-                  <p className="text-yellow-500 text-sm">
-                    💡 <strong>Admin Entry:</strong> This team will be registered with ₹0 fee. Team numbers are auto-assigned (reuses deleted slots).
-                  </p>
-                </div>
-
-                <form onSubmit={handleManualTeamRegistration} className="space-y-4">
-                  {/* Team Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Team Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={manualTeamForm.teamName}
-                      onChange={(e) => setManualTeamForm(prev => ({ ...prev, teamName: e.target.value }))}
-                      className="input-field w-full"
-                      placeholder="Enter team name"
-                      required
-                    />
-                  </div>
-
-                  {/* Player Usernames */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Player 1 Username *
-                      </label>
-                      <input
-                        type="text"
-                        value={manualTeamForm.player1Username}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player1Username: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="e.g., Player123"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Player 2 Username *
-                      </label>
-                      <input
-                        type="text"
-                        value={manualTeamForm.player2Username}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player2Username: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="e.g., Player456"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Player 3 Username *
-                      </label>
-                      <input
-                        type="text"
-                        value={manualTeamForm.player3Username}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player3Username: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="e.g., Player789"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Player 4 Username *
-                      </label>
-                      <input
-                        type="text"
-                        value={manualTeamForm.player4Username}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player4Username: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="e.g., Player012"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Contact Email *
-                      </label>
-                      <input
-                        type="email"
-                        value={manualTeamForm.contactEmail}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, contactEmail: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="team@example.com"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Phone Number (Optional)
-                      </label>
-                      <input
-                        type="tel"
-                        value={manualTeamForm.phoneNumber}
-                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                        className="input-field w-full"
-                        placeholder="+91 1234567890"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Form Actions */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="submit"
-                      className="btn-primary flex-1"
-                    >
-                      <Save className="w-4 h-4 inline mr-2" />
-                      Register Team
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowManualAddModal(false)}
-                      className="btn-secondary"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        )}
-
       </div>
     </div>
-      )}
-    </>
   )
 }
 
