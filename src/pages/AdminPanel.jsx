@@ -51,16 +51,33 @@ const AdminPanel = () => {
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
-    facebook: socialMedia.facebook,
-    twitter: socialMedia.twitter,
-    instagram: socialMedia.instagram,
-    discord: socialMedia.discord,
-    youtube: socialMedia.youtube,
-    whatsapp: socialMedia.whatsapp,
-    supportEmail: support.email,
-    supportPhone: support.phone,
-    tournamentSettings: tournamentSettings
+    facebook: '',
+    twitter: '',
+    instagram: '',
+    discord: '',
+    youtube: '',
+    whatsapp: '',
+    supportEmail: { enabled: false, address: '' },
+    supportPhone: { enabled: false, number: '' },
+    tournamentSettings: { registrationFee: 500, maxTeams: 100, currency: 'INR' }
   })
+
+  // Update form when store values load
+  useEffect(() => {
+    if (socialMedia && support && tournamentSettings) {
+      setSettingsForm({
+        facebook: socialMedia.facebook || '',
+        twitter: socialMedia.twitter || '',
+        instagram: socialMedia.instagram || '',
+        discord: socialMedia.discord || '',
+        youtube: socialMedia.youtube || '',
+        whatsapp: socialMedia.whatsapp || '',
+        supportEmail: support.email || { enabled: false, address: '' },
+        supportPhone: support.phone || { enabled: false, number: '' },
+        tournamentSettings: tournamentSettings || { registrationFee: 500, maxTeams: 100, currency: 'INR' }
+      })
+    }
+  }, [socialMedia, support, tournamentSettings])
 
   // Security form states
   const [currentPassword, setCurrentPassword] = useState('')
