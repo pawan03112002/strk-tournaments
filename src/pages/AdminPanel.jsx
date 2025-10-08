@@ -35,6 +35,15 @@ const AdminPanel = () => {
   const adminEmail = useSettingsStore((state) => state.adminEmail) || 'strk.tournaments@gmail.com'
   const resetAdminPassword = useSettingsStore((state) => state.resetAdminPassword)
   const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
+  const loadAdminCredentials = useSettingsStore((state) => state.loadAdminCredentials)
+  const isAdminLoaded = useSettingsStore((state) => state.isAdminLoaded)
+
+  // Load admin credentials from Firebase on component mount
+  useEffect(() => {
+    if (!isAdminLoaded) {
+      loadAdminCredentials()
+    }
+  }, [isAdminLoaded, loadAdminCredentials])
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
@@ -260,8 +269,8 @@ const AdminPanel = () => {
     }))
   }
 
-  // Change password handler
-  const handleChangePassword = (e) => {
+  // Change password handler (now async for Firebase)
+  const handleChangePassword = async (e) => {
     e.preventDefault()
     
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -285,9 +294,10 @@ const AdminPanel = () => {
       return
     }
 
-    const result = changeAdminPassword(newPassword)
+    toast.loading('Changing password...', { id: 'change-pwd' })
+    const result = await changeAdminPassword(newPassword)
     if (result.success) {
-      toast.success('Password changed successfully!')
+      toast.success(result.message || 'Password changed successfully!', { id: 'change-pwd' })
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -347,7 +357,7 @@ const AdminPanel = () => {
   }
 
   // Forgot password - Step 3: Reset Password
-  const handleResetAdminPassword = (e) => {
+  const handleResetAdminPassword = async (e) => {
     e.preventDefault()
     
     if (!resetNewPassword) {
@@ -360,16 +370,48 @@ const AdminPanel = () => {
       return
     }
 
-    const result = resetAdminPassword(forgotPasswordEmail, resetNewPassword)
+    toast.loading('Resetting password...', { id: 'reset-pwd' })
+    const result = await resetAdminPassword(forgotPasswordEmail, resetNewPassword)
     if (result.success) {
-      toast.success('Password reset successfully! Please login with your new password.')
+      toast.success(result.message || 'Password reset successfully!', { id: 'reset-pwd' })
       setForgotPasswordEmail('')
       setResetNewPassword('')
       setForgotPasswordOTP('')
       setShowForgotPassword(false)
       setForgotPasswordStep(1)
     } else {
-      toast.error(result.message)
+      toast.error(result.message, { id: 'reset-pwd' })
+    }
+  }
+
+  // Handle forgot password (simple version for settings page)
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    
+    if (!forgotPasswordEmail) {
+      toast.error('Please enter admin email!')
+      return
+    }
+
+    if (!resetNewPassword) {
+      toast.error('Please enter a new password!')
+      return
+    }
+
+    if (resetNewPassword.length < 6) {
+      toast.error('Password must be at least 6 characters!')
+      return
+    }
+
+    toast.loading('Resetting password...', { id: 'forgot-pwd' })
+    const result = await resetAdminPassword(forgotPasswordEmail, resetNewPassword)
+    if (result.success) {
+      toast.success(result.message || 'Password reset successfully!', { id: 'forgot-pwd' })
+      setForgotPasswordEmail('')
+      setResetNewPassword('')
+      setShowForgotPassword(false)
+    } else {
+      toast.error(result.message, { id: 'forgot-pwd' })
     }
   }
 
