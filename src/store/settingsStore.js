@@ -24,6 +24,13 @@ const useSettingsStore = create(
       adminPassword: 'admin123', // Default password
       adminEmail: 'strk.tournaments@gmail.com', // For password recovery
 
+      // Tournament Settings
+      tournamentSettings: {
+        registrationFee: 500, // in rupees
+        maxTeams: 100,
+        currency: 'INR'
+      },
+
       // Update social media
       updateSocialMedia: (platform, data) => {
         set((state) => ({
@@ -69,6 +76,17 @@ const useSettingsStore = create(
           return { success: true, message: 'Password reset successfully!' }
         }
         return { success: false, message: 'Email does not match admin email!' }
+      },
+
+      // Update tournament settings
+      updateTournamentSettings: (newSettings) => {
+        set((state) => ({
+          tournamentSettings: {
+            ...state.tournamentSettings,
+            ...newSettings
+          }
+        }))
+        return { success: true, message: 'Tournament settings updated!' }
       }
     }),
     {

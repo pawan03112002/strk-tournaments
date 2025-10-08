@@ -189,24 +189,34 @@ export const detectCurrency = () => {
 
 /**
  * Get payment amount based on currency
+ * Returns amount in smallest currency unit (paise for INR, cents for USD)
  */
-export const getPaymentAmount = (currency) => {
+export const getPaymentAmount = (currency, customAmount = null) => {
+  // If custom amount is provided (from settings), use it
+  if (customAmount) {
+    return customAmount * 100 // Convert to paise/cents
+  }
+  
+  // Default amounts
   const amounts = {
-    INR: 500,
-    USD: 7
+    INR: 500 * 100, // ₹500 = 50000 paise
+    USD: 7 * 100    // $7 = 700 cents
   }
   return amounts[currency] || amounts.USD
 }
 
 /**
  * Format currency for display
+ * Converts from smallest unit (paise/cents) to main unit (rupees/dollars)
  */
 export const formatCurrency = (amount, currency) => {
   const symbols = {
     INR: '₹',
     USD: '$'
   }
-  return `${symbols[currency] || '$'}${amount}`
+  // Convert from paise/cents to rupees/dollars
+  const displayAmount = Math.round(amount / 100)
+  return `${symbols[currency] || '$'}${displayAmount}`
 }
 
 /**
