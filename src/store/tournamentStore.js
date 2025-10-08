@@ -45,13 +45,25 @@ const useTournamentStore = create(
 
       // Register a new team after successful payment
       registerTeam: async (teamData) => {
-        const currentNumber = get().lastTeamNumber + 1
-        const teamNumber = currentNumber.toString().padStart(4, '0')
+        // Find first available team number (reuses deleted team numbers)
+        const existingTeams = get().registeredTeams
+        const usedNumbers = existingTeams.map(team => team.teamId).sort((a, b) => a - b)
+        
+        // Find first gap in team numbers
+        let teamId = 1
+        for (let i = 0; i < usedNumbers.length; i++) {
+          if (usedNumbers[i] !== teamId) {
+            break // Found a gap
+          }
+          teamId++
+        }
+        
+        const teamNumber = teamId.toString().padStart(4, '0')
         
         const newTeam = {
           ...teamData,
           teamNumber: `Team ${teamNumber}`,
-          teamId: currentNumber,
+          teamId: teamId,
           registeredAt: new Date().toISOString(),
           paymentStatus: 'completed',
           stage: 'enrolled' // Initial stage
@@ -72,7 +84,7 @@ const useTournamentStore = create(
         // Always update local state
         set((state) => ({
           registeredTeams: [...state.registeredTeams, teamWithId],
-          lastTeamNumber: currentNumber
+          lastTeamNumber: Math.max(teamId, state.lastTeamNumber)
         }))
 
         return teamWithId

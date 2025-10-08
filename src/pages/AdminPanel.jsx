@@ -30,6 +30,7 @@ const AdminPanel = () => {
   const {
     socialMedia,
     support,
+    tournamentSettings,
     updateSocialMedia,
     updateSupport,
     changeAdminPassword,
@@ -47,7 +48,8 @@ const AdminPanel = () => {
     youtube: socialMedia.youtube,
     whatsapp: socialMedia.whatsapp,
     supportEmail: support.email,
-    supportPhone: support.phone
+    supportPhone: support.phone,
+    tournamentSettings: tournamentSettings
   })
 
   // Security form states
@@ -1178,6 +1180,83 @@ const AdminPanel = () => {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              {/* Tournament Settings Card */}
+              <div className="card">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Trophy className="w-6 h-6 text-red-500" />
+                  Tournament Settings
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Registration Fee */}
+                  <div className="bg-gray-800/50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Registration Fee (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={settingsForm.tournamentSettings?.registrationFee || 500}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settingsForm.tournamentSettings,
+                          registrationFee: parseInt(e.target.value) || 0
+                        }
+                        setSettingsForm(prev => ({
+                          ...prev,
+                          tournamentSettings: newSettings
+                        }))
+                      }}
+                      className="input-field w-full"
+                      min="0"
+                      step="50"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">
+                      💰 Amount teams will pay to register
+                    </p>
+                  </div>
+
+                  {/* Max Teams */}
+                  <div className="bg-gray-800/50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Maximum Teams Allowed
+                    </label>
+                    <input
+                      type="number"
+                      value={settingsForm.tournamentSettings?.maxTeams || 100}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settingsForm.tournamentSettings,
+                          maxTeams: parseInt(e.target.value) || 0
+                        }
+                        setSettingsForm(prev => ({
+                          ...prev,
+                          tournamentSettings: newSettings
+                        }))
+                      }}
+                      className="input-field w-full"
+                      min="1"
+                      step="1"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">
+                      🏆 Limit total team registrations
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const result = useSettingsStore.getState().updateTournamentSettings(settingsForm.tournamentSettings)
+                    if (result.success) {
+                      toast.success('Tournament settings updated!')
+                    }
+                  }}
+                  className="btn-primary mt-6"
+                >
+                  <Save className="w-4 h-4 inline mr-2" />
+                  Save Tournament Settings
+                </button>
+              </div>
+
               <div className="card">
                 <h2 className="text-2xl font-bold text-white mb-6">Website Settings</h2>
                 

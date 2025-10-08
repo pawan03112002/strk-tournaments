@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useTournamentStore from '../store/tournamentStore'
+import useSettingsStore from '../store/settingsStore'
 import { 
   processRazorpayPayment, 
   processStripePayment, 
@@ -21,6 +22,7 @@ const TournamentRegistration = () => {
   const registerTeam = useTournamentStore((state) => state.registerTeam)
   const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
   const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
+  const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -68,8 +70,10 @@ const TournamentRegistration = () => {
     { code: '+94', country: 'Sri Lanka', flag: '🇱🇰' },
   ]
 
+  // Get payment amounts from settings or use defaults
+  const registrationFee = tournamentSettings?.registrationFee || 500
   const paymentAmounts = {
-    INR: '₹500',
+    INR: `₹${registrationFee}`,
     USD: '$7'
   }
 
@@ -162,10 +166,22 @@ const TournamentRegistration = () => {
 
     // Process payment
     setIsProcessingPayment(true)
+    // Check if max teams limit reached
+    const totalTeams = getTotalTeams()
+    const maxTeams = tournamentSettings?.maxTeams || 100
+    
+    if (totalTeams >= maxTeams) {
+      toast.error(`Registration closed! Maximum ${maxTeams} teams allowed.`, { id: 'payment' })
+      return
+    }
+
     toast.loading('Processing payment...', { id: 'payment' })
 
     try {
-      const amount = getPaymentAmount(currency)
+      // Use registration fee from settings (or default 500)
+      const registrationFee = tournamentSettings?.registrationFee || 500
+      const amount = getPaymentAmount(currency, registrationFee)
+      
       const orderDetails = {
         amount,
         currency,
@@ -644,7 +660,7 @@ const TournamentRegistration = () => {
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
-                    🇮🇳 India - ₹500
+                    🇮🇳 India - ₹{registrationFee}
                   </button>
                   <button
                     type="button"
