@@ -8,16 +8,14 @@ import toast from 'react-hot-toast'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
-  const { 
-    registeredTeams, 
-    getTotalTeams, 
-    clearAllTeams, 
-    updateTeamStage,
-    deleteTeam,
-    updateTeamDetails,
-    bulkUpdateStages,
-    bulkDeleteTeams
-  } = useTournamentStore()
+  const registeredTeams = useTournamentStore((state) => state.registeredTeams) || []
+  const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
+  const clearAllTeams = useTournamentStore((state) => state.clearAllTeams)
+  const updateTeamStage = useTournamentStore((state) => state.updateTeamStage)
+  const deleteTeam = useTournamentStore((state) => state.deleteTeam)
+  const updateTeamDetails = useTournamentStore((state) => state.updateTeamDetails)
+  const bulkUpdateStages = useTournamentStore((state) => state.bulkUpdateStages)
+  const bulkDeleteTeams = useTournamentStore((state) => state.bulkDeleteTeams)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStage, setFilterStage] = useState('all')
   const [selectedTeams, setSelectedTeams] = useState([])
@@ -27,27 +25,26 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('teams') // teams, settings, security
   
   // Settings store
-  const {
-    socialMedia,
-    support,
-    tournamentSettings,
-    updateSocialMedia,
-    updateSupport,
-    changeAdminPassword,
-    updateAdminEmail,
-    adminEmail,
-    resetAdminPassword
-  } = useSettingsStore()
+  const socialMedia = useSettingsStore((state) => state.socialMedia) || {}
+  const support = useSettingsStore((state) => state.support) || {}
+  const tournamentSettings = useSettingsStore((state) => state.tournamentSettings) || {}
+  const updateSocialMedia = useSettingsStore((state) => state.updateSocialMedia)
+  const updateSupport = useSettingsStore((state) => state.updateSupport)
+  const changeAdminPassword = useSettingsStore((state) => state.changeAdminPassword)
+  const updateAdminEmail = useSettingsStore((state) => state.updateAdminEmail)
+  const adminEmail = useSettingsStore((state) => state.adminEmail) || 'strk.tournaments@gmail.com'
+  const resetAdminPassword = useSettingsStore((state) => state.resetAdminPassword)
+  const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
-    facebook: socialMedia.facebook,
-    twitter: socialMedia.twitter,
-    instagram: socialMedia.instagram,
-    discord: socialMedia.discord,
-    youtube: socialMedia.youtube,
-    whatsapp: socialMedia.whatsapp,
-    supportEmail: support.email,
+    facebook: socialMedia?.facebook || '',
+    twitter: socialMedia?.twitter || '',
+    instagram: socialMedia?.instagram || '',
+    discord: socialMedia?.discord || '',
+    youtube: socialMedia?.youtube || '',
+    whatsapp: socialMedia?.whatsapp || '',
+    supportEmail: support?.email || { enabled: false, address: '' },
     supportPhone: support.phone,
     tournamentSettings: tournamentSettings
   })
@@ -411,7 +408,6 @@ const AdminPanel = () => {
   // Simple admin authentication check (you can enhance this later)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
-  const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
 
   const handleLogin = (e) => {
     e.preventDefault()
