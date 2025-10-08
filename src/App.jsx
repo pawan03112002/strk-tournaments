@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import IncognitoBlocker from './components/IncognitoBlocker'
+// import IncognitoBlocker from './components/IncognitoBlocker' // DISABLED FOR TESTING
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -19,7 +19,7 @@ import ContactUs from './pages/ContactUs'
 
 function App() {
   return (
-    <IncognitoBlocker>
+    // <IncognitoBlocker>
       <Router>
         <div className="min-h-screen bg-gaming-dark">
         <Navbar />
@@ -55,7 +55,7 @@ function App() {
         />
       </div>
     </Router>
-    </IncognitoBlocker>
+    // </IncognitoBlocker>
   )
 }
 
