@@ -16,7 +16,8 @@ const AdminPanel = () => {
     deleteTeam,
     updateTeamDetails,
     bulkUpdateStages,
-    bulkDeleteTeams
+    bulkDeleteTeams,
+    registerTeam
   } = useTournamentStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStage, setFilterStage] = useState('all')
@@ -25,6 +26,18 @@ const AdminPanel = () => {
   const [editForm, setEditForm] = useState({})
   const [sortBy, setSortBy] = useState('newest')
   const [activeTab, setActiveTab] = useState('teams') // teams, settings, security
+  
+  // Manual team registration modal
+  const [showManualAddModal, setShowManualAddModal] = useState(false)
+  const [manualTeamForm, setManualTeamForm] = useState({
+    teamName: '',
+    player1Username: '',
+    player2Username: '',
+    player3Username: '',
+    player4Username: '',
+    contactEmail: '',
+    phoneNumber: ''
+  })
   
   // Settings store
   const {
@@ -401,10 +414,74 @@ const AdminPanel = () => {
       toast.error('No teams selected!')
       return
     }
-    if (window.confirm(`DELETE ${selectedTeams.length} teams? This cannot be undone!`)) {
+
+    if (window.confirm(`Delete ${selectedTeams.length} teams? This cannot be undone!`)) {
       bulkDeleteTeams(selectedTeams)
       setSelectedTeams([])
-      toast.success(`${selectedTeams.length} teams deleted.`)
+      toast.success(`${selectedTeams.length} teams deleted!`)
+    }
+  }
+
+  // Manual team registration handler
+  const handleManualTeamRegistration = async (e) => {
+    e.preventDefault()
+    
+    // Validate form
+    if (!manualTeamForm.teamName) {
+      toast.error('Team name is required!')
+      return
+    }
+    if (!manualTeamForm.player1Username || !manualTeamForm.player2Username || 
+        !manualTeamForm.player3Username || !manualTeamForm.player4Username) {
+      toast.error('All 4 player usernames are required!')
+      return
+    }
+    if (!manualTeamForm.contactEmail) {
+      toast.error('Contact email is required!')
+      return
+    }
+
+    // Check max teams limit
+    const maxTeams = tournamentSettings?.maxTeams || 100
+    if (getTotalTeams() >= maxTeams) {
+      toast.error(`Maximum ${maxTeams} teams limit reached!`)
+      return
+    }
+
+    try {
+      toast.loading('Registering team...', { id: 'manual-register' })
+      
+      // Register team using existing function (bypasses payment)
+      const newTeam = await registerTeam({
+        teamName: manualTeamForm.teamName,
+        players: [
+          { username: manualTeamForm.player1Username },
+          { username: manualTeamForm.player2Username },
+          { username: manualTeamForm.player3Username },
+          { username: manualTeamForm.player4Username }
+        ],
+        contactEmail: manualTeamForm.contactEmail,
+        phoneNumber: manualTeamForm.phoneNumber || 'N/A',
+        paymentId: 'MANUAL_ADMIN_ENTRY',
+        amount: 0 // ₹0 for manual entry
+      })
+
+      toast.success(`Team registered successfully! ${newTeam.teamNumber}`, { id: 'manual-register' })
+      
+      // Reset form and close modal
+      setManualTeamForm({
+        teamName: '',
+        player1Username: '',
+        player2Username: '',
+        player3Username: '',
+        player4Username: '',
+        contactEmail: '',
+        phoneNumber: ''
+      })
+      setShowManualAddModal(false)
+    } catch (error) {
+      console.error('Manual registration error:', error)
+      toast.error('Failed to register team!', { id: 'manual-register' })
     }
   }
 
@@ -669,6 +746,13 @@ const AdminPanel = () => {
               <p className="text-gray-400">Manage tournament registrations</p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={() => setShowManualAddModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                Add Team
+              </button>
               <button
                 onClick={exportToCSV}
                 className="btn-secondary flex items-center gap-2"
@@ -1629,6 +1713,167 @@ const AdminPanel = () => {
           )}
 
         </motion.div>
+
+        {/* Manual Team Registration Modal */}
+        <AnimatePresence>
+          {showManualAddModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={() => setShowManualAddModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Users className="w-6 h-6 text-red-500" />
+                    Manual Team Registration
+                  </h2>
+                  <button
+                    onClick={() => setShowManualAddModal(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+                  <p className="text-yellow-500 text-sm">
+                    💡 <strong>Admin Entry:</strong> This team will be registered with ₹0 fee. Team numbers are auto-assigned (reuses deleted slots).
+                  </p>
+                </div>
+
+                <form onSubmit={handleManualTeamRegistration} className="space-y-4">
+                  {/* Team Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Team Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={manualTeamForm.teamName}
+                      onChange={(e) => setManualTeamForm(prev => ({ ...prev, teamName: e.target.value }))}
+                      className="input-field w-full"
+                      placeholder="Enter team name"
+                      required
+                    />
+                  </div>
+
+                  {/* Player Usernames */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Player 1 Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={manualTeamForm.player1Username}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player1Username: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="e.g., Player123"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Player 2 Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={manualTeamForm.player2Username}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player2Username: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="e.g., Player456"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Player 3 Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={manualTeamForm.player3Username}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player3Username: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="e.g., Player789"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Player 4 Username *
+                      </label>
+                      <input
+                        type="text"
+                        value={manualTeamForm.player4Username}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, player4Username: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="e.g., Player012"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Contact Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={manualTeamForm.contactEmail}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, contactEmail: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="team@example.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Phone Number (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={manualTeamForm.phoneNumber}
+                        onChange={(e) => setManualTeamForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        className="input-field w-full"
+                        placeholder="+91 1234567890"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Form Actions */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      className="btn-primary flex-1"
+                    >
+                      <Save className="w-4 h-4 inline mr-2" />
+                      Register Team
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualAddModal(false)}
+                      className="btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   )
