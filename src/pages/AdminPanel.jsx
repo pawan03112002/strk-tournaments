@@ -503,12 +503,12 @@ const AdminPanel = () => {
   }
 
   // Filter and sort teams
-  const filteredTeams = registeredTeams
+  const filteredTeams = (registeredTeams || [])
     .filter(team => {
       const matchesSearch = 
-        team.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        team.teamNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        team.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())
+        (team.teamName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (team.teamNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (team.contactEmail || '').toLowerCase().includes(searchQuery.toLowerCase())
       
       const matchesStage = filterStage === 'all' || team.stage === filterStage
       
@@ -533,18 +533,18 @@ const AdminPanel = () => {
   const exportToCSV = () => {
     const headers = ['Team Number', 'Team Name', 'Player 1', 'Player 2', 'Player 3', 'Player 4', 'Contact Email', 'Contact Number', 'Payment Amount', 'Stage', 'Registration Date']
     
-    const rows = registeredTeams.map(team => [
-      team.teamNumber,
-      team.teamName,
-      team.players[0],
-      team.players[1],
-      team.players[2],
-      team.players[3],
-      team.contactEmail,
-      team.contactNumber,
-      team.amount,
-      team.stage,
-      new Date(team.registeredAt).toLocaleString()
+    const rows = (registeredTeams || []).map(team => [
+      team.teamNumber || '',
+      team.teamName || '',
+      team.players?.[0]?.username || team.players?.[0] || '',
+      team.players?.[1]?.username || team.players?.[1] || '',
+      team.players?.[2]?.username || team.players?.[2] || '',
+      team.players?.[3]?.username || team.players?.[3] || '',
+      team.contactEmail || '',
+      team.phoneNumber || team.contactNumber || '',
+      team.amount || 0,
+      team.stage || 'enrolled',
+      team.registeredAt ? new Date(team.registeredAt).toLocaleString() : ''
     ])
 
     const csvContent = [
