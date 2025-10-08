@@ -767,7 +767,7 @@ const AdminPanel = () => {
             </div>
             <div className="card text-center">
               <div className="text-3xl font-bold text-yellow-500 mb-2">
-                ₹{getTotalTeams() * 500}
+                ₹{getTotalTeams() * (tournamentSettings?.registrationFee || 500)}
               </div>
               <p className="text-gray-400 text-sm">Total Revenue (INR)</p>
             </div>
