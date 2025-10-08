@@ -24,13 +24,14 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="relative">
-              <Trophy className="w-10 h-10 text-red-500 group-hover:rotate-12 transition-transform duration-300" />
-              <div className="absolute inset-0 bg-red-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              STRK TOURNAMENTS
+          <Link to="/" className="flex items-center space-x-3 group">
+            <img 
+              src="/strk-logo.png" 
+              alt="STRK Logo" 
+              className="h-12 w-auto transition-transform duration-300 group-hover:scale-110"
+            />
+            <span className="text-xl font-bold text-white hidden sm:block">
+              TOURNAMENTS
             </span>
           </Link>
 

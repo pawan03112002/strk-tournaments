@@ -11,10 +11,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Brand & Description */}
           <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-4">
-              <Trophy className="w-8 h-8 text-red-500" />
-              <span className="text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                STRK TOURNAMENTS
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src="/strk-logo.png" 
+                alt="STRK Logo" 
+                className="h-10 w-auto"
+              />
+              <span className="text-lg font-bold text-white">
+                TOURNAMENTS
               </span>
             </div>
             <p className="text-gray-400 text-sm mb-3 max-w-md">
