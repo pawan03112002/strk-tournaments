@@ -51,12 +51,13 @@ const AdminPanel = () => {
   const loadAdminCredentials = useSettingsStore((state) => state.loadAdminCredentials)
   const isAdminLoaded = useSettingsStore((state) => state.isAdminLoaded)
 
-  // Load admin credentials from Firebase on component mount
+  // Load admin credentials from Firebase on component mount (only once)
   useEffect(() => {
     if (!isAdminLoaded) {
       loadAdminCredentials()
     }
-  }, [isAdminLoaded, loadAdminCredentials])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
