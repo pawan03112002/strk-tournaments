@@ -3,24 +3,42 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
+// Check if Firebase is properly configured
+const isFirebaseConfigured = () => {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
+  return apiKey && apiKey !== "YOUR_API_KEY" && !apiKey.includes('YOUR_')
+}
+
 // Firebase configuration
-// IMPORTANT: Replace these with your actual Firebase config
-// Get these values from: https://console.firebase.google.com
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment123456789",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dummy-project.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dummy-project",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "dummy-project.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig)
+let app = null
+let auth = null
+let db = null
+let storage = null
 
-// Initialize services
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
+try {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  db = getFirestore(app)
+  storage = getStorage(app)
+  
+  if (!isFirebaseConfigured()) {
+    console.warn('⚠️ Firebase not configured. Using localStorage mode.')
+    console.warn('Add Firebase credentials to .env file for full functionality.')
+  }
+} catch (error) {
+  console.error('Firebase initialization error:', error)
+  console.warn('Running in offline mode with localStorage')
+}
 
+export { auth, db, storage }
 export default app
