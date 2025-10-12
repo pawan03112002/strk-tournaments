@@ -1654,25 +1654,59 @@ const AdminPanel = () => {
                     
                     <div className="bg-gray-800/50 p-4 rounded-lg">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        UPI QR Code URL
+                        UPI QR Code
                       </label>
+                      
+                      {/* Show current QR Code if exists */}
+                      {settingsForm.paymentSettings?.upiQrCodeUrl && (
+                        <div className="mb-3 p-4 bg-white rounded-lg inline-block">
+                          <img 
+                            src={settingsForm.paymentSettings?.upiQrCodeUrl} 
+                            alt="Current QR Code"
+                            className="w-32 h-32 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Upload new QR Code */}
                       <input
-                        type="text"
-                        value={settingsForm.paymentSettings?.upiQrCodeUrl || ''}
+                        type="file"
+                        accept="image/*"
                         onChange={(e) => {
-                          setSettingsForm(prev => ({
-                            ...prev,
-                            paymentSettings: {
-                              ...prev.paymentSettings,
-                              upiQrCodeUrl: e.target.value
+                          const file = e.target.files[0]
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error('File size should be less than 5MB')
+                              return
                             }
-                          }))
+                            
+                            const reader = new FileReader()
+                            reader.onloadend = () => {
+                              setSettingsForm(prev => ({
+                                ...prev,
+                                paymentSettings: {
+                                  ...prev.paymentSettings,
+                                  upiQrCodeUrl: reader.result
+                                }
+                              }))
+                              toast.success('QR Code uploaded! Click Save to apply')
+                            }
+                            reader.readAsDataURL(file)
+                          }
                         }}
-                        placeholder="/upi-qr-code.png"
-                        className="input-field w-full"
+                        className="block w-full text-sm text-gray-400
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-red-600 file:text-white
+                          hover:file:bg-red-700
+                          file:cursor-pointer cursor-pointer"
                       />
                       <p className="text-xs text-gray-400 mt-2">
-                        🖼️ Upload QR code to /public folder and enter path here
+                        🖼️ Upload your UPI QR code image (max 5MB)
                       </p>
                     </div>
                   </div>
