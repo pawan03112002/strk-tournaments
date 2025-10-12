@@ -6,14 +6,6 @@ import toast from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 import useTournamentStore from '../store/tournamentStore'
 import useSettingsStore from '../store/settingsStore'
-import { 
-  processRazorpayPayment, 
-  processStripePayment, 
-  detectCurrency, 
-  getPaymentAmount, 
-  formatCurrency,
-  loadRazorpayScript 
-} from '../services/paymentService'
 import { sendPaymentConfirmation } from '../services/emailService'
 
 const TournamentRegistration = () => {
@@ -32,12 +24,8 @@ const TournamentRegistration = () => {
     }
   }, [user, navigate])
 
-  const [currency, setCurrency] = useState('INR')
   const [teamLogo, setTeamLogo] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [paymentSuccess, setPaymentSuccess] = useState(false)
-  const [assignedTeamNumber, setAssignedTeamNumber] = useState(null)
   const [showExistingTeamModal, setShowExistingTeamModal] = useState(false)
   const [existingTeam, setExistingTeam] = useState(null)
 
@@ -72,12 +60,8 @@ const TournamentRegistration = () => {
 
   // Get payment amounts from settings or use defaults
   const registrationFee = tournamentSettings?.registrationFee || 500
-  const paymentAmounts = {
-    INR: `₹${registrationFee}`,
-    USD: '$7'
-  }
 
-  // Check if user already has a registered team on mount and detect currency
+  // Check if user already has a registered team on mount
   useEffect(() => {
     if (user?.email) {
       const team = getTeamByEmail(user.email)
@@ -86,15 +70,6 @@ const TournamentRegistration = () => {
         setShowExistingTeamModal(true)
         toast.error('You have already registered for this tournament!')
       }
-    }
-    
-    // Detect currency based on location
-    const detectedCurrency = detectCurrency()
-    setCurrency(detectedCurrency)
-    
-    // Load Razorpay script if INR
-    if (detectedCurrency === 'INR') {
-      loadRazorpayScript()
     }
   }, [user, getTeamByEmail])
 
@@ -164,102 +139,32 @@ const TournamentRegistration = () => {
       return
     }
 
-    // Process payment
-    setIsProcessingPayment(true)
     // Check if max teams limit reached
     const totalTeams = getTotalTeams()
     const maxTeams = tournamentSettings?.maxTeams || 100
     
     if (totalTeams >= maxTeams) {
-      toast.error(`Registration closed! Maximum ${maxTeams} teams allowed.`, { id: 'payment' })
+      toast.error(`Registration closed! Maximum ${maxTeams} teams allowed.`)
       return
     }
 
-    toast.loading('Processing payment...', { id: 'payment' })
-
-    try {
-      // Use registration fee from settings (or default 500)
-      const registrationFee = tournamentSettings?.registrationFee || 500
-      const amount = getPaymentAmount(currency, registrationFee)
-      
-      const orderDetails = {
-        amount,
-        currency,
-        teamName: formData.teamName,
-        email: formData.contactEmail,
-        phone: `${formData.countryCode}${formData.phoneNumber}`,
-        name: formData.teamName,
-        orderId: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }
-
-      let paymentResult
-
-      if (currency === 'INR') {
-        // Process Razorpay payment for INR
-        paymentResult = await processRazorpayPayment(orderDetails)
-      } else {
-        // Process Stripe payment for other currencies
-        paymentResult = await processStripePayment(orderDetails)
-      }
-
-      if (paymentResult.success) {
-        // Payment successful - Register team
-        try {
-          const registeredTeam = await registerTeam({
-            teamName: formData.teamName,
-            players: [
-              formData.player1Username,
-              formData.player2Username,
-              formData.player3Username,
-              formData.player4Username
-            ],
-            contactEmail: formData.contactEmail,
-            contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
-            teamLogo: logoPreview || null,
-            currency: currency,
-            amount: formatCurrency(amount, currency),
-            userId: user?.id,
-            paymentId: paymentResult.paymentId || paymentResult.orderId,
-            paymentStatus: 'completed'
-          })
-
-          setIsProcessingPayment(false)
-          setPaymentSuccess(true)
-          setAssignedTeamNumber(registeredTeam.teamNumber)
-          
-          toast.success(`Payment successful! You are ${registeredTeam.teamNumber}`, { id: 'payment' })
-          
-          // Send confirmation email (non-blocking)
-          sendPaymentConfirmation(formData.contactEmail, {
-            teamName: formData.teamName,
-            teamNumber: registeredTeam.teamNumber,
-            amount: formatCurrency(amount, currency),
-            transactionId: paymentResult.paymentId || paymentResult.orderId
-          }).catch(err => console.warn('Email send failed:', err))
-          
-          // Auto redirect after 3 seconds
-          setTimeout(() => {
-            navigate('/dashboard')
-          }, 3000)
-        } catch (regError) {
-          console.error('Registration error after payment:', regError)
-          toast.error('Payment received but registration failed. Contact support with payment ID: ' + paymentResult.paymentId, { 
-            id: 'payment',
-            duration: 10000 
-          })
-          setIsProcessingPayment(false)
+    // Navigate to manual payment page
+    navigate('/manual-payment', {
+      state: {
+        registrationData: {
+          teamName: formData.teamName,
+          contactEmail: formData.contactEmail,
+          contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
+          players: [
+            formData.player1Username,
+            formData.player2Username,
+            formData.player3Username,
+            formData.player4Username
+          ],
+          teamLogo: logoPreview
         }
       }
-    } catch (error) {
-      setIsProcessingPayment(false)
-      console.error('Payment error:', error)
-      
-      if (error.message === 'Payment cancelled by user') {
-        toast.error('Payment cancelled', { id: 'payment' })
-      } else {
-        toast.error(error.description || 'Payment failed. Please try again.', { id: 'payment' })
-      }
-    }
+    })
   }
 
   // Don't render if not authenticated (while redirecting)
@@ -707,22 +612,19 @@ const TournamentRegistration = () => {
                     <p className="text-green-400 font-bold">SPECIAL OFFER: 100% Fee Refund!</p>
                   </div>
                   <p className="text-gray-300 text-sm">
-                    Reach <span className="text-yellow-400 font-bold">Quarter Finals</span> from Enrollment round and get your <span className="text-white font-bold">{paymentAmounts[currency]}</span> registration fee refunded completely!
+                    Reach <span className="text-yellow-400 font-bold">Quarter Finals</span> from Enrollment round and get your <span className="text-white font-bold">₹{registrationFee}</span> registration fee refunded completely!
                   </p>
                 </motion.div>
 
                 {/* Submit & Pay Button */}
                 <motion.button
                   type="submit"
-                  disabled={isProcessingPayment}
-                  whileHover={{ scale: isProcessingPayment ? 1 : 1.02 }}
-                  whileTap={{ scale: isProcessingPayment ? 1 : 0.98 }}
-                  className={`w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3 ${
-                    isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-3"
                 >
                   <CreditCard className="w-6 h-6" />
-                  {isProcessingPayment ? 'Processing Payment...' : `Proceed to Pay ${paymentAmounts[currency]}`}
+                  Proceed to Payment - ₹{registrationFee}
                 </motion.button>
               </div>
 
