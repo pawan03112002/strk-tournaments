@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Upload, Check, Copy } from 'lucide-react'
 import { submitManualPayment, formatCurrency } from '../services/paymentService'
-import { paymentMethods } from '../config/payment'
+import { paymentMethods, upiConfig } from '../config/payment'
 import useSettingsStore from '../store/settingsStore'
 import toast from 'react-hot-toast'
 

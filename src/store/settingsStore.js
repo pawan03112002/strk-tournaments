@@ -21,8 +21,8 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-// Firebase admin settings document reference
-const adminSettingsRef = doc(db, 'adminSettings', 'credentials')
+// Firebase admin settings document reference (only if db is available)
+const adminSettingsRef = db ? doc(db, 'adminSettings', 'credentials') : null
 
 const useSettingsStore = create(
   persist(
@@ -89,6 +89,16 @@ const useSettingsStore = create(
       // Load admin credentials from Firebase
       loadAdminCredentials: async () => {
         try {
+          // If Firebase is not available, use default password from localStorage
+          if (!adminSettingsRef) {
+            const defaultPassword = 'STRK@Tournament#2025!Secure'
+            set({ 
+              adminPassword: defaultPassword,
+              isAdminLoaded: true 
+            })
+            return { success: true, message: 'Using default password (Firebase not configured)' }
+          }
+          
           const docSnap = await getDoc(adminSettingsRef)
           if (docSnap.exists()) {
             const data = docSnap.data()
@@ -117,6 +127,12 @@ const useSettingsStore = create(
           }
         } catch (error) {
           console.error('Error loading admin credentials:', error)
+          // Fallback to default password
+          const defaultPassword = 'STRK@Tournament#2025!Secure'
+          set({ 
+            adminPassword: defaultPassword,
+            isAdminLoaded: true 
+          })
           return { success: false, error: error.message }
         }
       },
@@ -124,6 +140,13 @@ const useSettingsStore = create(
       // Change admin password (now saves to Firebase)
       changeAdminPassword: async (newPassword) => {
         try {
+          set({ adminPassword: newPassword })
+          
+          // Only save to Firebase if available
+          if (!adminSettingsRef) {
+            return { success: true, message: 'Password changed locally (Firebase not configured)' }
+          }
+          
           const encrypted = encryptPassword(newPassword)
           await setDoc(adminSettingsRef, {
             encryptedPassword: encrypted,
@@ -131,7 +154,6 @@ const useSettingsStore = create(
             lastModified: new Date().toISOString()
           }, { merge: true })
           
-          set({ adminPassword: newPassword })
           return { success: true, message: 'Password changed successfully and synced!' }
         } catch (error) {
           console.error('Error changing password:', error)
@@ -155,6 +177,13 @@ const useSettingsStore = create(
         try {
           const state = useSettingsStore.getState()
           if (email === state.adminEmail) {
+            set({ adminPassword: newPassword })
+            
+            // Only save to Firebase if available
+            if (!adminSettingsRef) {
+              return { success: true, message: 'Password reset locally (Firebase not configured)' }
+            }
+            
             const encrypted = encryptPassword(newPassword)
             await setDoc(adminSettingsRef, {
               encryptedPassword: encrypted,
@@ -162,7 +191,6 @@ const useSettingsStore = create(
               lastModified: new Date().toISOString()
             }, { merge: true })
             
-            set({ adminPassword: newPassword })
             return { success: true, message: 'Password reset successfully and synced!' }
           }
           return { success: false, message: 'Email does not match admin email!' }

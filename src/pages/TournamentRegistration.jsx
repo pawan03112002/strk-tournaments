@@ -20,6 +20,9 @@ const TournamentRegistration = () => {
   const [logoPreview, setLogoPreview] = useState(null)
   const [showExistingTeamModal, setShowExistingTeamModal] = useState(false)
   const [existingTeam, setExistingTeam] = useState(null)
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [assignedTeamNumber, setAssignedTeamNumber] = useState('')
+  const [currency, setCurrency] = useState('INR')
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -60,6 +63,12 @@ const TournamentRegistration = () => {
 
   // Get payment amounts from settings or use defaults
   const registrationFee = tournamentSettings?.registrationFee || 500
+  
+  // Payment amounts object for different currencies
+  const paymentAmounts = {
+    INR: `₹${registrationFee}`,
+    USD: '$7'
+  }
 
   // Check if user already has a registered team on mount
   useEffect(() => {

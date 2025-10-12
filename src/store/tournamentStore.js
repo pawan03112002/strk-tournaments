@@ -24,6 +24,14 @@ const useTournamentStore = create(
       fetchTeams: async () => {
         try {
           set({ loading: true })
+          
+          // If Firebase is not available, use local storage only
+          if (!db) {
+            console.log('Firebase not available, using local storage')
+            set({ loading: false })
+            return
+          }
+          
           const teamsSnapshot = await getDocs(collection(db, 'teams'))
           const teams = teamsSnapshot.docs.map(doc => ({
             firestoreId: doc.id,
@@ -114,18 +122,22 @@ const useTournamentStore = create(
       updateTeamStage: async (teamId, newStage) => {
         try {
           const team = get().registeredTeams.find(t => t.teamId === teamId)
-          if (!team || !team.firestoreId) return
+          if (!team) return
           
-          await updateDoc(doc(db, 'teams', team.firestoreId), {
-            stage: newStage,
-            updatedAt: new Date().toISOString()
-          })
-          
+          // Update local state first
           set((state) => ({
             registeredTeams: state.registeredTeams.map((team) =>
               team.teamId === teamId ? { ...team, stage: newStage } : team
             ),
           }))
+          
+          // Update in Firebase if available
+          if (db && team.firestoreId) {
+            await updateDoc(doc(db, 'teams', team.firestoreId), {
+              stage: newStage,
+              updatedAt: new Date().toISOString()
+            })
+          }
         } catch (error) {
           console.error('Error updating team stage:', error)
           throw error
@@ -136,13 +148,17 @@ const useTournamentStore = create(
       deleteTeam: async (teamId) => {
         try {
           const team = get().registeredTeams.find(t => t.teamId === teamId)
-          if (!team || !team.firestoreId) return
+          if (!team) return
           
-          await deleteDoc(doc(db, 'teams', team.firestoreId))
-          
+          // Update local state first
           set((state) => ({
             registeredTeams: state.registeredTeams.filter((team) => team.teamId !== teamId)
           }))
+          
+          // Delete from Firebase if available
+          if (db && team.firestoreId) {
+            await deleteDoc(doc(db, 'teams', team.firestoreId))
+          }
         } catch (error) {
           console.error('Error deleting team:', error)
           throw error
@@ -153,18 +169,22 @@ const useTournamentStore = create(
       updateTeamDetails: async (teamId, updates) => {
         try {
           const team = get().registeredTeams.find(t => t.teamId === teamId)
-          if (!team || !team.firestoreId) return
+          if (!team) return
           
-          await updateDoc(doc(db, 'teams', team.firestoreId), {
-            ...updates,
-            updatedAt: new Date().toISOString()
-          })
-          
+          // Update local state first
           set((state) => ({
             registeredTeams: state.registeredTeams.map((team) =>
               team.teamId === teamId ? { ...team, ...updates } : team
             ),
           }))
+          
+          // Update in Firebase if available
+          if (db && team.firestoreId) {
+            await updateDoc(doc(db, 'teams', team.firestoreId), {
+              ...updates,
+              updatedAt: new Date().toISOString()
+            })
+          }
         } catch (error) {
           console.error('Error updating team details:', error)
           throw error
@@ -174,20 +194,23 @@ const useTournamentStore = create(
       // Bulk update stages
       bulkUpdateStages: async (teamIds, newStage) => {
         try {
-          const teams = get().registeredTeams.filter(t => teamIds.includes(t.teamId))
-          
-          await Promise.all(teams.map(team => 
-            team.firestoreId && updateDoc(doc(db, 'teams', team.firestoreId), {
-              stage: newStage,
-              updatedAt: new Date().toISOString()
-            })
-          ))
-          
+          // Update local state first
           set((state) => ({
             registeredTeams: state.registeredTeams.map((team) =>
               teamIds.includes(team.teamId) ? { ...team, stage: newStage } : team
             ),
           }))
+          
+          // Update in Firebase if available
+          if (db) {
+            const teams = get().registeredTeams.filter(t => teamIds.includes(t.teamId))
+            await Promise.all(teams.map(team => 
+              team.firestoreId && updateDoc(doc(db, 'teams', team.firestoreId), {
+                stage: newStage,
+                updatedAt: new Date().toISOString()
+              })
+            ))
+          }
         } catch (error) {
           console.error('Error bulk updating stages:', error)
           throw error
@@ -197,15 +220,18 @@ const useTournamentStore = create(
       // Bulk delete teams
       bulkDeleteTeams: async (teamIds) => {
         try {
-          const teams = get().registeredTeams.filter(t => teamIds.includes(t.teamId))
-          
-          await Promise.all(teams.map(team => 
-            team.firestoreId && deleteDoc(doc(db, 'teams', team.firestoreId))
-          ))
-          
+          // Update local state first
           set((state) => ({
             registeredTeams: state.registeredTeams.filter((team) => !teamIds.includes(team.teamId))
           }))
+          
+          // Delete from Firebase if available
+          if (db) {
+            const teams = get().registeredTeams.filter(t => teamIds.includes(t.teamId))
+            await Promise.all(teams.map(team => 
+              team.firestoreId && deleteDoc(doc(db, 'teams', team.firestoreId))
+            ))
+          }
         } catch (error) {
           console.error('Error bulk deleting teams:', error)
           throw error
@@ -215,13 +241,16 @@ const useTournamentStore = create(
       // Clear all data (for testing)
       clearAllTeams: async () => {
         try {
-          const teams = get().registeredTeams
-          
-          await Promise.all(teams.map(team =>
-            team.firestoreId && deleteDoc(doc(db, 'teams', team.firestoreId))
-          ))
-          
+          // Clear local state first
           set({ registeredTeams: [], lastTeamNumber: 0 })
+          
+          // Clear Firebase if available
+          if (db) {
+            const teams = get().registeredTeams
+            await Promise.all(teams.map(team =>
+              team.firestoreId && deleteDoc(doc(db, 'teams', team.firestoreId))
+            ))
+          }
         } catch (error) {
           console.error('Error clearing teams:', error)
           throw error

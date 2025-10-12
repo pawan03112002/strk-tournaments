@@ -222,23 +222,26 @@ const useAuthStore = create((set, get) => ({
       const currentUser = get().user
       if (!currentUser) throw new Error('No user logged in')
       
-      // Update Firestore document
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        ...updates,
-        updatedAt: new Date().toISOString()
-      })
+      // Update local state first
+      const updatedUser = {
+        ...currentUser,
+        ...updates
+      }
+      set({ user: updatedUser })
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser))
       
-      // Update display name in Firebase Auth if username changed
-      if (updates.username) {
-        await updateProfile(auth.currentUser, { displayName: updates.username })
+      // Update Firestore document if available
+      if (isFirebaseAvailable() && db) {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          ...updates,
+          updatedAt: new Date().toISOString()
+        })
       }
       
-      set({ 
-        user: {
-          ...currentUser,
-          ...updates
-        }
-      })
+      // Update display name in Firebase Auth if username changed and available
+      if (updates.username && isFirebaseAvailable() && auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: updates.username })
+      }
       
       return { success: true }
     } catch (error) {
@@ -250,6 +253,9 @@ const useAuthStore = create((set, get) => ({
   // Send password reset email using Firebase
   sendPasswordReset: async (email) => {
     try {
+      if (!isFirebaseAvailable()) {
+        return { success: false, error: 'Firebase not configured. Password reset not available.' }
+      }
       await sendPasswordResetEmail(auth, email)
       return { success: true }
     } catch (error) {
@@ -261,6 +267,17 @@ const useAuthStore = create((set, get) => ({
   // Update user password (after OTP verification - stores in Firestore for later)
   updateUserPassword: async (email, newPassword) => {
     try {
+      // If Firebase not available, update in localStorage
+      if (!isFirebaseAvailable()) {
+        const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+        const userIndex = existingUsers.findIndex(u => u.email === email)
+        if (userIndex !== -1) {
+          existingUsers[userIndex].password = newPassword
+          localStorage.setItem('registeredUsers', JSON.stringify(existingUsers))
+        }
+        return { success: true }
+      }
+      
       // Store the verified password reset request
       const usersSnapshot = await getDocs(collection(db, 'users'))
       const userDoc = usersSnapshot.docs.find(doc => doc.data().email === email)
@@ -286,6 +303,13 @@ const useAuthStore = create((set, get) => ({
   // Fetch all users (for duplicate check)
   fetchUsers: async () => {
     try {
+      // If Firebase not available, use localStorage
+      if (!isFirebaseAvailable()) {
+        const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+        set({ users: localUsers })
+        return
+      }
+      
       const usersSnapshot = await getDocs(collection(db, 'users'))
       const users = usersSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -294,6 +318,9 @@ const useAuthStore = create((set, get) => ({
       set({ users })
     } catch (error) {
       console.error('Error fetching users:', error)
+      // Fallback to localStorage on error
+      const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+      set({ users: localUsers })
     }
   },
 }))
