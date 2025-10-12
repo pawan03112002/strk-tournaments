@@ -127,6 +127,9 @@ const AdminPanel = () => {
     }
   }
 
+  // Get payment settings from store
+  const paymentSettings = useSettingsStore((state) => state.paymentSettings)
+
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
     facebook: socialMedia?.facebook || '',
@@ -137,7 +140,8 @@ const AdminPanel = () => {
     whatsapp: socialMedia?.whatsapp || '',
     supportEmail: support?.email || { enabled: false, address: '' },
     supportPhone: support.phone,
-    tournamentSettings: tournamentSettings
+    tournamentSettings: tournamentSettings,
+    paymentSettings: paymentSettings
   })
 
   // Security form states
@@ -1610,6 +1614,192 @@ const AdminPanel = () => {
                 >
                   <Save className="w-4 h-4 inline mr-2" />
                   Save Tournament Settings
+                </button>
+              </div>
+
+              {/* Payment Settings Card */}
+              <div className="card">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <CreditCard className="w-6 h-6 text-green-500" />
+                  Payment Settings
+                </h2>
+                
+                {/* UPI Settings */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-white mb-4">UPI Payment Details</h3>
+                  <div className="space-y-4">
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        UPI ID
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.upiId || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              upiId: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="yourname@paytm"
+                        className="input-field w-full"
+                      />
+                      <p className="text-xs text-gray-400 mt-2">
+                        💳 Your UPI ID for receiving payments
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        UPI QR Code URL
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.upiQrCodeUrl || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              upiQrCodeUrl: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="/upi-qr-code.png"
+                        className="input-field w-full"
+                      />
+                      <p className="text-xs text-gray-400 mt-2">
+                        🖼️ Upload QR code to /public folder and enter path here
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Transfer Settings */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-white mb-4">Bank Transfer Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Account Holder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.bankAccountName || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              bankAccountName: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="Your Full Name"
+                        className="input-field w-full"
+                      />
+                    </div>
+                    
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Account Number
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.bankAccountNumber || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              bankAccountNumber: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="1234567890"
+                        className="input-field w-full"
+                      />
+                    </div>
+                    
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        IFSC Code
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.bankIfsc || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              bankIfsc: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="SBIN0001234"
+                        className="input-field w-full"
+                      />
+                    </div>
+                    
+                    <div className="bg-gray-800/50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Bank Name
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.bankName || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              bankName: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="State Bank of India"
+                        className="input-field w-full"
+                      />
+                    </div>
+                    
+                    <div className="bg-gray-800/50 p-4 rounded-lg md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Branch Name
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.paymentSettings?.bankBranch || ''}
+                        onChange={(e) => {
+                          setSettingsForm(prev => ({
+                            ...prev,
+                            paymentSettings: {
+                              ...prev.paymentSettings,
+                              bankBranch: e.target.value
+                            }
+                          }))
+                        }}
+                        placeholder="Main Branch"
+                        className="input-field w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const result = useSettingsStore.getState().updatePaymentSettings(settingsForm.paymentSettings)
+                    if (result.success) {
+                      toast.success('Payment settings updated!')
+                    }
+                  }}
+                  className="btn-primary"
+                >
+                  <Save className="w-4 h-4 inline mr-2" />
+                  Save Payment Settings
                 </button>
               </div>
 

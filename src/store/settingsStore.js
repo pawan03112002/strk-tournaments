@@ -55,6 +55,17 @@ const useSettingsStore = create(
         currency: 'INR'
       },
 
+      // Payment Settings
+      paymentSettings: {
+        upiId: 'yourname@paytm',
+        upiQrCodeUrl: '/upi-qr-code.png',
+        bankAccountName: 'Your Name',
+        bankAccountNumber: '1234567890',
+        bankIfsc: 'SBIN0001234',
+        bankName: 'State Bank of India',
+        bankBranch: 'Main Branch'
+      },
+
       // Update social media
       updateSocialMedia: (platform, data) => {
         set((state) => ({
@@ -170,6 +181,17 @@ const useSettingsStore = create(
           }
         }))
         return { success: true, message: 'Tournament settings updated!' }
+      },
+
+      // Update payment settings
+      updatePaymentSettings: (newSettings) => {
+        set((state) => ({
+          paymentSettings: {
+            ...state.paymentSettings,
+            ...newSettings
+          }
+        }))
+        return { success: true, message: 'Payment settings updated!' }
       }
     }),
     {

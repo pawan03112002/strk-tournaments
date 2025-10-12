@@ -2,13 +2,18 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Upload, Check, Copy } from 'lucide-react'
 import { submitManualPayment, formatCurrency } from '../services/paymentService'
-import { upiConfig, bankConfig, paymentAmounts, paymentMethods } from '../config/payment'
+import { paymentMethods } from '../config/payment'
+import useSettingsStore from '../store/settingsStore'
 import toast from 'react-hot-toast'
 
 export default function ManualPayment() {
   const navigate = useNavigate()
   const location = useLocation()
   const registrationData = location.state?.registrationData || {}
+
+  // Get settings from store
+  const paymentSettings = useSettingsStore((state) => state.paymentSettings)
+  const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
 
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods.UPI)
   const [transactionId, setTransactionId] = useState('')
@@ -18,7 +23,8 @@ export default function ManualPayment() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const amount = paymentAmounts.ENTRY_FEE
+  // Get amount from tournament settings
+  const amount = tournamentSettings?.registrationFee || 500
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -167,7 +173,7 @@ export default function ManualPayment() {
                 <p className="text-gray-800 font-bold mb-4">Scan QR Code to Pay</p>
                 <div className="inline-block bg-gray-200 p-4 rounded-lg">
                   <img
-                    src={upiConfig.qrCodeUrl}
+                    src={paymentSettings?.upiQrCodeUrl || '/upi-qr-code.png'}
                     alt="UPI QR Code"
                     className="w-48 h-48 mx-auto"
                     onError={(e) => {
@@ -186,16 +192,16 @@ export default function ManualPayment() {
               <div className="bg-gray-900 p-4 rounded-lg">
                 <p className="text-gray-400 text-sm mb-2">Or pay using UPI ID:</p>
                 <div className="flex items-center justify-between">
-                  <code className="text-lg text-white font-mono">{upiConfig.upiId}</code>
+                  <code className="text-lg text-white font-mono">{paymentSettings?.upiId || 'yourname@paytm'}</code>
                   <button
-                    onClick={() => copyToClipboard(upiConfig.upiId)}
+                    onClick={() => copyToClipboard(paymentSettings?.upiId || 'yourname@paytm')}
                     className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 rounded transition-colors"
                   >
                     {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4 text-white" />}
                     <span className="ml-2 text-white text-sm">{copied ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
-                <p className="text-gray-500 text-sm mt-2">Name: {upiConfig.displayName}</p>
+                <p className="text-gray-500 text-sm mt-2">Name: STRK Tournaments</p>
               </div>
             </>
           ) : (
@@ -204,14 +210,14 @@ export default function ManualPayment() {
               <div className="space-y-3">
                 <div className="bg-gray-900 p-4 rounded-lg">
                   <p className="text-gray-400 text-sm">Account Name</p>
-                  <p className="text-white font-bold">{bankConfig.accountName}</p>
+                  <p className="text-white font-bold">{paymentSettings?.bankAccountName || 'Your Name'}</p>
                 </div>
                 <div className="bg-gray-900 p-4 rounded-lg">
                   <p className="text-gray-400 text-sm">Account Number</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-white font-bold font-mono">{bankConfig.accountNumber}</p>
+                    <p className="text-white font-bold font-mono">{paymentSettings?.bankAccountNumber || '1234567890'}</p>
                     <button
-                      onClick={() => copyToClipboard(bankConfig.accountNumber)}
+                      onClick={() => copyToClipboard(paymentSettings?.bankAccountNumber || '1234567890')}
                       className="text-red-600 hover:text-red-500"
                     >
                       <Copy className="w-4 h-4" />
@@ -221,9 +227,9 @@ export default function ManualPayment() {
                 <div className="bg-gray-900 p-4 rounded-lg">
                   <p className="text-gray-400 text-sm">IFSC Code</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-white font-bold font-mono">{bankConfig.ifscCode}</p>
+                    <p className="text-white font-bold font-mono">{paymentSettings?.bankIfsc || 'SBIN0001234'}</p>
                     <button
-                      onClick={() => copyToClipboard(bankConfig.ifscCode)}
+                      onClick={() => copyToClipboard(paymentSettings?.bankIfsc || 'SBIN0001234')}
                       className="text-red-600 hover:text-red-500"
                     >
                       <Copy className="w-4 h-4" />
@@ -232,11 +238,11 @@ export default function ManualPayment() {
                 </div>
                 <div className="bg-gray-900 p-4 rounded-lg">
                   <p className="text-gray-400 text-sm">Bank Name</p>
-                  <p className="text-white font-bold">{bankConfig.bankName}</p>
+                  <p className="text-white font-bold">{paymentSettings?.bankName || 'State Bank of India'}</p>
                 </div>
                 <div className="bg-gray-900 p-4 rounded-lg">
                   <p className="text-gray-400 text-sm">Branch</p>
-                  <p className="text-white font-bold">{bankConfig.branch}</p>
+                  <p className="text-white font-bold">{paymentSettings?.bankBranch || 'Main Branch'}</p>
                 </div>
               </div>
             </>
