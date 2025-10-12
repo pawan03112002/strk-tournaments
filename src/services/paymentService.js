@@ -1,249 +1,154 @@
-import { loadStripe } from '@stripe/stripe-js'
-
-// Payment Configuration
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY'
-const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_YOUR_KEY'
-
-// Initialize Stripe
-let stripePromise = null
-const getStripe = () => {
-  if (!stripePromise) {
-    stripePromise = loadStripe(STRIPE_KEY)
-  }
-  return stripePromise
-}
+// Manual Payment Service
 
 /**
- * Process Razorpay Payment (for INR) - Production Mode with Backend Verification
- * @param {object} orderDetails - Order details
+ * Submit manual payment proof
+ * @param {object} paymentData - Payment proof details
  */
-export const processRazorpayPayment = async (orderDetails) => {
+export const submitManualPayment = async (paymentData) => {
   try {
-    // Step 1: Create order on backend
-    const orderResponse = await fetch('/api/create-order', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: orderDetails.amount,
-        currency: orderDetails.currency || 'INR',
-        receipt: `receipt_${orderDetails.orderId}`,
-        notes: {
-          teamName: orderDetails.teamName,
-          contactEmail: orderDetails.contactEmail
-        }
-      })
-    })
+    const {
+      teamName,
+      contactEmail,
+      contactNumber,
+      paymentMethod,
+      transactionId,
+      amount,
+      paymentProof, // base64 image or file
+      upiId,
+      payerName
+    } = paymentData
 
-    const orderData = await orderResponse.json()
-
-    if (!orderData.success) {
-      throw new Error(orderData.error || 'Failed to create order')
+    // In a real app, this would save to Firebase/database
+    // For now, we'll store in localStorage and show admin panel
+    const paymentRecord = {
+      id: `PAY_${Date.now()}`,
+      teamName,
+      contactEmail,
+      contactNumber,
+      paymentMethod,
+      transactionId,
+      amount,
+      paymentProof,
+      upiId,
+      payerName,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      verifiedAt: null
     }
 
-    // Step 2: Open Razorpay checkout with backend order ID
-    return new Promise((resolve, reject) => {
-      try {
-        if (typeof window.Razorpay === 'undefined') {
-          throw new Error('Razorpay SDK not loaded')
-        }
+    // Save to localStorage (you can replace with Firebase later)
+    const existingPayments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    existingPayments.push(paymentRecord)
+    localStorage.setItem('pendingPayments', JSON.stringify(existingPayments))
 
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: 'STRK Tournaments',
-          description: `Tournament Registration - ${orderDetails.teamName}`,
-          image: '/logo.png',
-          order_id: orderData.orderId,
-          prefill: {
-            email: orderDetails.contactEmail,
-            contact: orderDetails.contactNumber
-          },
-          notes: {
-            team_name: orderDetails.teamName,
-            tournament: 'Free Fire PC Tournament'
-          },
-          theme: {
-            color: '#DC2626'
-          },
-          handler: async function (response) {
-            try {
-              // Step 3: Verify payment on backend
-              const verifyResponse = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
-                })
-              })
+    console.log('Payment submitted:', paymentRecord)
 
-              const verifyData = await verifyResponse.json()
-
-              if (verifyData.success) {
-                resolve({
-                  success: true,
-                  paymentId: response.razorpay_payment_id,
-                  orderId: response.razorpay_order_id,
-                  signature: response.razorpay_signature
-                })
-              } else {
-                throw new Error('Payment verification failed')
-              }
-            } catch (error) {
-              reject(new Error('Payment verification failed: ' + error.message))
-            }
-          },
-          modal: {
-            ondismiss: function() {
-              reject(new Error('Payment cancelled by user'))
-            }
-          }
-        }
-
-        const rzp = new window.Razorpay(options)
-        
-        rzp.on('payment.failed', function (response) {
-          reject({
-            error: true,
-            code: response.error.code,
-            description: response.error.description,
-            reason: response.error.reason
-          })
-        })
-
-        rzp.open()
-      } catch (error) {
-        reject(error)
-      }
-    })
+    return {
+      success: true,
+      paymentId: paymentRecord.id,
+      message: 'Payment proof submitted successfully. Please wait for verification.'
+    }
   } catch (error) {
-    console.error('Payment error:', error)
+    console.error('Manual payment submission error:', error)
     throw error
   }
 }
 
 /**
- * Process Stripe Payment (for USD and other currencies)
- * @param {object} orderDetails - Order details
+ * Get pending payments (Admin function)
  */
-export const processStripePayment = async (orderDetails) => {
+export const getPendingPayments = () => {
   try {
-    const stripe = await getStripe()
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    return payments.filter(p => p.status === 'pending')
+  } catch (error) {
+    console.error('Error fetching pending payments:', error)
+    return []
+  }
+}
+
+/**
+ * Get all payments (Admin function)
+ */
+export const getAllPayments = () => {
+  try {
+    return JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+  } catch (error) {
+    console.error('Error fetching all payments:', error)
+    return []
+  }
+}
+
+/**
+ * Verify payment (Admin function)
+ * @param {string} paymentId - Payment ID to verify
+ */
+export const verifyPayment = (paymentId) => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const paymentIndex = payments.findIndex(p => p.id === paymentId)
     
-    if (!stripe) {
-      throw new Error('Stripe failed to initialize')
+    if (paymentIndex === -1) {
+      throw new Error('Payment not found')
     }
 
-    // In production, you need to create a checkout session on your backend
-    // For now, using Stripe Checkout (requires backend endpoint)
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount: orderDetails.amount,
-        currency: orderDetails.currency || 'USD',
-        teamName: orderDetails.teamName,
-        email: orderDetails.email
-      })
-    })
-
-    const session = await response.json()
-
-    // Redirect to Stripe Checkout
-    const result = await stripe.redirectToCheckout({
-      sessionId: session.id
-    })
-
-    if (result.error) {
-      throw new Error(result.error.message)
+    payments[paymentIndex].status = 'verified'
+    payments[paymentIndex].verifiedAt = new Date().toISOString()
+    
+    localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    
+    return {
+      success: true,
+      message: 'Payment verified successfully'
     }
-
-    return { success: true }
   } catch (error) {
-    console.error('Stripe payment error:', error)
+    console.error('Error verifying payment:', error)
     throw error
   }
 }
 
 /**
- * Detect user's currency based on location
+ * Reject payment (Admin function)
+ * @param {string} paymentId - Payment ID to reject
+ * @param {string} reason - Rejection reason
  */
-export const detectCurrency = () => {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const indianTimezones = ['Asia/Kolkata', 'Asia/Calcutta']
-  
-  if (indianTimezones.some(tz => timezone.includes(tz))) {
-    return 'INR'
-  }
-  
-  return 'USD'
-}
+export const rejectPayment = (paymentId, reason = '') => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const paymentIndex = payments.findIndex(p => p.id === paymentId)
+    
+    if (paymentIndex === -1) {
+      throw new Error('Payment not found')
+    }
 
-/**
- * Get payment amount based on currency
- * Returns amount in smallest currency unit (paise for INR, cents for USD)
- */
-export const getPaymentAmount = (currency, customAmount = null) => {
-  // If custom amount is provided (from settings), use it
-  if (customAmount) {
-    return customAmount * 100 // Convert to paise/cents
+    payments[paymentIndex].status = 'rejected'
+    payments[paymentIndex].rejectedAt = new Date().toISOString()
+    payments[paymentIndex].rejectionReason = reason
+    
+    localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    
+    return {
+      success: true,
+      message: 'Payment rejected'
+    }
+  } catch (error) {
+    console.error('Error rejecting payment:', error)
+    throw error
   }
-  
-  // Default amounts
-  const amounts = {
-    INR: 500 * 100, // ₹500 = 50000 paise
-    USD: 7 * 100    // $7 = 700 cents
-  }
-  return amounts[currency] || amounts.USD
 }
 
 /**
  * Format currency for display
- * Converts from smallest unit (paise/cents) to main unit (rupees/dollars)
  */
-export const formatCurrency = (amount, currency) => {
-  const symbols = {
-    INR: '₹',
-    USD: '$'
-  }
-  // Convert from paise/cents to rupees/dollars
-  const displayAmount = Math.round(amount / 100)
-  return `${symbols[currency] || '$'}${displayAmount}`
-}
-
-/**
- * Load Razorpay script dynamically
- */
-export const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    // Check if already loaded
-    if (typeof window.Razorpay !== 'undefined') {
-      resolve(true)
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.async = true
-    script.onload = () => resolve(true)
-    script.onerror = () => resolve(false)
-    document.body.appendChild(script)
-  })
+export const formatCurrency = (amount) => {
+  return `₹${amount}`
 }
 
 export default {
-  processRazorpayPayment,
-  processStripePayment,
-  detectCurrency,
-  getPaymentAmount,
-  formatCurrency,
-  loadRazorpayScript
+  submitManualPayment,
+  getPendingPayments,
+  getAllPayments,
+  verifyPayment,
+  rejectPayment,
+  formatCurrency
 }

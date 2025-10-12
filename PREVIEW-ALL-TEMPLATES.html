@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 STRK Tournament - All Templates Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 100%);
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 56px;
+            color: #DC2626;
+            text-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            font-size: 24px;
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+
+        .instructions {
+            background: rgba(220, 38, 38, 0.1);
+            border: 2px solid #DC2626;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 50px;
+        }
+
+        .instructions h2 {
+            color: #fbbf24;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .instructions ol {
+            padding-left: 30px;
+            line-height: 2;
+            font-size: 18px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .instructions code {
+            background: rgba(0,0,0,0.5);
+            padding: 3px 8px;
+            border-radius: 5px;
+            color: #60a5fa;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+
+        .template-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #374151;
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .template-card:hover {
+            border-color: #DC2626;
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .template-card h3 {
+            color: #DC2626;
+            font-size: 28px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .template-card .icon {
+            font-size: 36px;
+        }
+
+        .template-info {
+            margin: 20px 0;
+            color: #9ca3af;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .template-info strong {
+            color: #ffffff;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #DC2626 0%, #991b1b 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 35px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            box-shadow: 0 5px 20px rgba(220, 38, 38, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
+        }
+
+        .quick-tips {
+            background: rgba(251, 191, 36, 0.1);
+            border: 2px solid #fbbf24;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .quick-tips h2 {
+            color: #fbbf24;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .quick-tips ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .quick-tips li {
+            padding: 10px 0;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .quick-tips li:last-child {
+            border-bottom: none;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 2px solid #374151;
+            margin-top: 60px;
+        }
+
+        .footer p {
+            color: #9ca3af;
+            font-size: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #DC2626;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎨 STRK Tournament Templates</h1>
+            <p>Professional Email & Social Media Templates</p>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <h2>📖 How to Use These Templates</h2>
+            <ol>
+                <li><strong>Click "Open Template"</strong> to view each template in your browser</li>
+                <li><strong>For Email:</strong> Copy the HTML and paste into Gmail/Mailchimp</li>
+                <li><strong>For Social Media:</strong> Take a screenshot or use browser tools to save as image</li>
+                <li><strong>Customize:</strong> Edit the HTML files to change dates, prizes, and details</li>
+                <li><strong>Test First:</strong> Always send a test email to yourself before mass sending</li>
+            </ol>
+        </div>
+
+        <!-- Templates Grid -->
+        <div class="templates-grid">
+            <!-- Email Template -->
+            <div class="template-card">
+                <h3>
+                    <span class="icon">📧</span>
+                    Email Invitation
+                    <span class="badge">READY</span>
+                </h3>
+                <div class="template-info">
+                    <strong>Use For:</strong> Email campaigns, newsletters, direct invitations<br/>
+                    <strong>Size:</strong> 600px width (mobile-responsive)<br/>
+                    <strong>Features:</strong> Tournament details, prize showcase, CTA button<br/>
+                    <strong>File:</strong> <code>email-templates/tournament-invitation.html</code><br/>
+                    <strong>Note:</strong> <em>Entry fee & social media sections removed</em>
+                </div>
+                <a href="email-templates/tournament-invitation.html" target="_blank" class="btn">
+                    📧 Open Template
+                </a>
+                <a href="email-templates/README.md" target="_blank" class="btn btn-secondary">
+                    📚 Instructions
+                </a>
+            </div>
+
+            <!-- Instagram Post -->
+            <div class="template-card">
+                <h3>
+                    <span class="icon">📸</span>
+                    Instagram Post
+                    <span class="badge">READY</span>
+                </h3>
+                <div class="template-info">
+                    <strong>Use For:</strong> Instagram feed posts<br/>
+                    <strong>Size:</strong> 1080x1080px (square)<br/>
+                    <strong>Features:</strong> Eye-catching design, tournament grid, animated flames<br/>
+                    <strong>File:</strong> <code>social-media/instagram-post.html</code>
+                </div>
+                <a href="social-media/instagram-post.html" target="_blank" class="btn">
+                    📸 Open Template
+                </a>
+            </div>
+
+            <!-- Facebook Post -->
+            <div class="template-card">
+                <h3>
+                    <span class="icon">👍</span>
+                    Facebook Post
+                    <span class="badge">READY</span>
+                </h3>
+                <div class="template-info">
+                    <strong>Use For:</strong> Facebook posts, Twitter/X banners<br/>
+                    <strong>Size:</strong> 1200x630px (landscape)<br/>
+                    <strong>Features:</strong> Two-column layout, info cards, bold typography<br/>
+                    <strong>File:</strong> <code>social-media/facebook-post.html</code>
+                </div>
+                <a href="social-media/facebook-post.html" target="_blank" class="btn">
+                    👍 Open Template
+                </a>
+            </div>
+
+            <!-- Story Template -->
+            <div class="template-card">
+                <h3>
+                    <span class="icon">📱</span>
+                    Story Template
+                    <span class="badge">READY</span>
+                </h3>
+                <div class="template-info">
+                    <strong>Use For:</strong> Instagram Stories, WhatsApp Status<br/>
+                    <strong>Size:</strong> 1080x1920px (vertical)<br/>
+                    <strong>Features:</strong> Full-screen vertical, swipe-up CTA, info cards<br/>
+                    <strong>File:</strong> <code>social-media/story-template.html</code>
+                </div>
+                <a href="social-media/story-template.html" target="_blank" class="btn">
+                    📱 Open Template
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="quick-tips">
+            <h2>💡 Quick Tips</h2>
+            <ul>
+                <li><strong>📸 Taking Screenshots:</strong> Windows: <code>Win + Shift + S</code> | Mac: <code>Cmd + Shift + 4</code></li>
+                <li><strong>✉️ Email Subject Lines:</strong> "🔥 You're Invited!" or "⚡ Epic Tournament - Register Now!"</li>
+                <li><strong>📅 Best Posting Times:</strong> Instagram 6-9 PM IST | Email 10-11 AM or 7-8 PM IST</li>
+                <li><strong>🎨 Customization:</strong> All templates are in HTML - edit with any text editor</li>
+                <li><strong>📱 Mobile Testing:</strong> Always test emails on mobile devices before sending</li>
+                <li><strong>#️⃣ Hashtags:</strong> #STRKTournaments #FreeFire #Esports #PCGaming</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🎮 STRK Tournaments | strk-tournaments.vercel.app</p>
+            <p style="margin-top: 10px;">📧 Contact: strk.tournaments@gmail.com</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('%c🎨 STRK TOURNAMENT TEMPLATES', 'font-size: 24px; font-weight: bold; color: #DC2626;');
+        console.log('%c📧 Email Template: email-templates/tournament-invitation.html', 'font-size: 14px; color: #60a5fa;');
+        console.log('%c📸 Instagram Post: social-media/instagram-post.html', 'font-size: 14px; color: #60a5fa;');
+        console.log('%c👍 Facebook Post: social-media/facebook-post.html', 'font-size: 14px; color: #60a5fa;');
+        console.log('%c📱 Story Template: social-media/story-template.html', 'font-size: 14px; color: #60a5fa;');
+        console.log('%c\n💡 TIP: Right-click on templates → Save as PNG/JPEG', 'font-size: 14px; color: #fbbf24;');
+    </script>
+</body>
+</html>

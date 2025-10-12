@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Mail, Phone, Trophy, Download, Search, Filter, Calendar, Shield, ChevronRight, Crown, Target, Medal, Edit2, Trash2, CheckSquare, X, Save, ArrowUpCircle, ChevronLeft, Undo2, Settings, Lock, Facebook, Twitter, Instagram, MessageCircle, Youtube, Eye, EyeOff } from 'lucide-react'
+import { Users, Mail, Phone, Trophy, Download, Search, Filter, Calendar, Shield, ChevronRight, Crown, Target, Medal, Edit2, Trash2, CheckSquare, X, Save, ArrowUpCircle, ChevronLeft, Undo2, Settings, Lock, Facebook, Twitter, Instagram, MessageCircle, Youtube, Eye, EyeOff, CreditCard, RefreshCw } from 'lucide-react'
 import useTournamentStore from '../store/tournamentStore'
 import useSettingsStore from '../store/settingsStore'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, formatCurrency } from '../services/paymentService'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
@@ -22,7 +23,14 @@ const AdminPanel = () => {
   const [editingTeam, setEditingTeam] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [sortBy, setSortBy] = useState('newest')
-  const [activeTab, setActiveTab] = useState('teams') // teams, settings, security
+  const [activeTab, setActiveTab] = useState('teams') // teams, payments, settings, security
+  
+  // Payment verification states
+  const [payments, setPayments] = useState([])
+  const [paymentFilter, setPaymentFilter] = useState('pending')
+  const [selectedPayment, setSelectedPayment] = useState(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
   
   // Settings store
   const socialMedia = useSettingsStore((state) => state.socialMedia) || {}
@@ -45,6 +53,79 @@ const AdminPanel = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Load payments when payments tab is active
+  useEffect(() => {
+    if (activeTab === 'payments') {
+      loadPayments()
+    }
+  }, [activeTab, paymentFilter])
+
+  const loadPayments = () => {
+    const allPayments = getAllPayments()
+    
+    let filtered = allPayments
+    if (paymentFilter === 'pending') {
+      filtered = allPayments.filter(p => p.status === 'pending')
+    } else if (paymentFilter === 'verified') {
+      filtered = allPayments.filter(p => p.status === 'verified')
+    } else if (paymentFilter === 'rejected') {
+      filtered = allPayments.filter(p => p.status === 'rejected')
+    }
+    
+    setPayments(filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
+  }
+
+  const handleVerifyPayment = async (paymentId) => {
+    if (!confirm('Verify this payment?')) return
+
+    setPaymentLoading(true)
+    try {
+      await verifyPayment(paymentId)
+      toast.success('Payment verified successfully!')
+      loadPayments()
+      setSelectedPayment(null)
+    } catch (error) {
+      toast.error('Failed to verify payment')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const handleRejectPayment = async (paymentId) => {
+    if (!rejectionReason.trim()) {
+      toast.error('Please enter rejection reason')
+      return
+    }
+
+    if (!confirm('Reject this payment?')) return
+
+    setPaymentLoading(true)
+    try {
+      await rejectPayment(paymentId, rejectionReason)
+      toast.success('Payment rejected')
+      loadPayments()
+      setSelectedPayment(null)
+      setRejectionReason('')
+    } catch (error) {
+      toast.error('Failed to reject payment')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'text-yellow-400 bg-yellow-400/10'
+      case 'verified':
+        return 'text-green-400 bg-green-400/10'
+      case 'rejected':
+        return 'text-red-400 bg-red-400/10'
+      default:
+        return 'text-gray-400 bg-gray-400/10'
+    }
+  }
 
   // Settings form states
   const [settingsForm, setSettingsForm] = useState({
@@ -746,6 +827,28 @@ const AdminPanel = () => {
                 )}
               </button>
               <button
+                onClick={() => setActiveTab('payments')}
+                className={`px-6 py-3 font-bold transition-colors relative ${
+                  activeTab === 'payments'
+                    ? 'text-red-500'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <CreditCard className="w-5 h-5 inline mr-2" />
+                Payment Verification
+                {getAllPayments().filter(p => p.status === 'pending').length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-black text-xs rounded-full font-bold">
+                    {getAllPayments().filter(p => p.status === 'pending').length}
+                  </span>
+                )}
+                {activeTab === 'payments' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"
+                  />
+                )}
+              </button>
+              <button
                 onClick={() => setActiveTab('settings')}
                 className={`px-6 py-3 font-bold transition-colors relative ${
                   activeTab === 'settings'
@@ -1211,6 +1314,219 @@ const AdminPanel = () => {
             </button>
           </div>
           </>
+          )}
+
+          {/* Payment Verification Tab */}
+          {activeTab === 'payments' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Payment Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="card text-center">
+                  <div className="text-3xl font-bold text-yellow-500 mb-2">
+                    {getAllPayments().filter(p => p.status === 'pending').length}
+                  </div>
+                  <p className="text-gray-400 text-sm">Pending Verification</p>
+                </div>
+                <div className="card text-center">
+                  <div className="text-3xl font-bold text-green-500 mb-2">
+                    {getAllPayments().filter(p => p.status === 'verified').length}
+                  </div>
+                  <p className="text-gray-400 text-sm">Verified</p>
+                </div>
+                <div className="card text-center">
+                  <div className="text-3xl font-bold text-red-500 mb-2">
+                    {getAllPayments().filter(p => p.status === 'rejected').length}
+                  </div>
+                  <p className="text-gray-400 text-sm">Rejected</p>
+                </div>
+                <div className="card text-center">
+                  <div className="text-3xl font-bold text-blue-500 mb-2">
+                    {getAllPayments().length}
+                  </div>
+                  <p className="text-gray-400 text-sm">Total Payments</p>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-white">Payment Verifications</h2>
+                  <button
+                    onClick={loadPayments}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4 text-white" />
+                    <span className="text-white text-sm">Refresh</span>
+                  </button>
+                </div>
+                
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { value: 'pending', label: 'Pending', count: getAllPayments().filter(p => p.status === 'pending').length },
+                    { value: 'verified', label: 'Verified', count: getAllPayments().filter(p => p.status === 'verified').length },
+                    { value: 'rejected', label: 'Rejected', count: getAllPayments().filter(p => p.status === 'rejected').length },
+                    { value: 'all', label: 'All', count: getAllPayments().length }
+                  ].map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setPaymentFilter(f.value)}
+                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                        paymentFilter === f.value
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-700 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {f.label} ({f.count})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payments List */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* List */}
+                <div className="space-y-4">
+                  {payments.length === 0 ? (
+                    <div className="card text-center py-12">
+                      <CreditCard className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400">No payments found</p>
+                    </div>
+                  ) : (
+                    payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        onClick={() => setSelectedPayment(payment)}
+                        className={`card cursor-pointer transition-all hover:bg-gray-750 ${
+                          selectedPayment?.id === payment.id ? 'ring-2 ring-red-600' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-white font-bold">{payment.teamName}</h3>
+                            <p className="text-sm text-gray-400">{payment.contactEmail}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(payment.status)}`}>
+                            {payment.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Amount:</span>
+                            <span className="text-green-400 font-bold ml-2">{formatCurrency(payment.amount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Method:</span>
+                            <span className="text-white ml-2">{payment.paymentMethod === 'upi' ? 'UPI' : 'Bank'}</span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-gray-500">TXN:</span>
+                            <span className="text-white ml-2 font-mono text-xs">{payment.transactionId}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Details */}
+                <div className="lg:sticky lg:top-4 lg:h-fit">
+                  {selectedPayment ? (
+                    <div className="card">
+                      <h2 className="text-xl font-bold text-white mb-4">Payment Details</h2>
+                      
+                      <div className="space-y-3 mb-6">
+                        <div>
+                          <label className="text-gray-400 text-sm">Payment ID</label>
+                          <p className="text-white font-mono text-sm">{selectedPayment.id}</p>
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-sm">Team Name</label>
+                          <p className="text-white font-bold">{selectedPayment.teamName}</p>
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-sm">Payer Name</label>
+                          <p className="text-white font-bold">{selectedPayment.payerName}</p>
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-sm">Amount</label>
+                          <p className="text-green-400 font-bold text-xl">{formatCurrency(selectedPayment.amount)}</p>
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-sm">Transaction ID</label>
+                          <p className="text-white font-mono">{selectedPayment.transactionId}</p>
+                        </div>
+                        <div>
+                          <label className="text-gray-400 text-sm">Status</label>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mt-1 ${getStatusColor(selectedPayment.status)}`}>
+                            {selectedPayment.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Screenshot */}
+                      <div className="mb-6">
+                        <label className="text-gray-400 text-sm block mb-2">Payment Screenshot</label>
+                        {selectedPayment.paymentProof ? (
+                          <a
+                            href={selectedPayment.paymentProof}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <img
+                              src={selectedPayment.paymentProof}
+                              alt="Payment proof"
+                              className="w-full rounded-lg border-2 border-gray-700 hover:border-red-600 transition-colors cursor-pointer"
+                            />
+                          </a>
+                        ) : (
+                          <p className="text-gray-500">No screenshot</p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      {selectedPayment.status === 'pending' && (
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => handleVerifyPayment(selectedPayment.id)}
+                            disabled={paymentLoading}
+                            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <CheckSquare className="w-5 h-5" />
+                            Verify Payment
+                          </button>
+
+                          <input
+                            type="text"
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="Rejection reason..."
+                            className="input-field"
+                          />
+                          <button
+                            onClick={() => handleRejectPayment(selectedPayment.id)}
+                            disabled={paymentLoading || !rejectionReason.trim()}
+                            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <X className="w-5 h-5" />
+                            Reject Payment
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="card text-center py-12">
+                      <Eye className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400">Select a payment to view details</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {/* Settings Tab */}

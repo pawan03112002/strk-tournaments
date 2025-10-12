@@ -11,6 +11,8 @@ import Profile from './pages/Profile'
 import Downloads from './pages/Downloads'
 import TournamentRegistration from './pages/TournamentRegistration'
 import AdminPanel from './pages/AdminPanel'
+import ManualPayment from './pages/ManualPayment'
+import PaymentPending from './pages/PaymentPending'
 import TermsAndConditions from './pages/TermsAndConditions'
 import RefundPolicy from './pages/RefundPolicy'
 import PrivacyPolicy from './pages/PrivacyPolicy'
@@ -31,6 +33,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tournament-registration" element={<TournamentRegistration />} />
+          <Route path="/manual-payment" element={<ManualPayment />} />
+          <Route path="/payment-pending" element={<PaymentPending />} />
           <Route path="/jai_shree_ram" element={<AdminPanel />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />

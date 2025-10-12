@@ -1,25 +1,36 @@
-// Payment Gateway Configuration
+// Manual Payment Configuration
 
-// Razorpay (for Indian payments)
-export const razorpayConfig = {
-  keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || "YOUR_RAZORPAY_KEY_ID",
-  keySecret: import.meta.env.VITE_RAZORPAY_KEY_SECRET || "YOUR_RAZORPAY_KEY_SECRET",
+// Payment Methods
+export const paymentMethods = {
+  UPI: 'upi',
+  BANK_TRANSFER: 'bank_transfer'
 }
 
-// Stripe (for international payments)
-export const stripeConfig = {
-  publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "YOUR_STRIPE_PUBLISHABLE_KEY",
-  secretKey: import.meta.env.VITE_STRIPE_SECRET_KEY || "YOUR_STRIPE_SECRET_KEY",
+// UPI Payment Details
+export const upiConfig = {
+  upiId: import.meta.env.VITE_UPI_ID || 'yourname@paytm',
+  qrCodeUrl: import.meta.env.VITE_UPI_QR_CODE_URL || '/upi-qr-code.png',
+  displayName: 'STRK Tournaments'
+}
+
+// Bank Transfer Details
+export const bankConfig = {
+  accountName: import.meta.env.VITE_BANK_ACCOUNT_NAME || 'Your Name',
+  accountNumber: import.meta.env.VITE_BANK_ACCOUNT_NUMBER || '1234567890',
+  ifscCode: import.meta.env.VITE_BANK_IFSC || 'SBIN0001234',
+  bankName: import.meta.env.VITE_BANK_NAME || 'State Bank of India',
+  branch: import.meta.env.VITE_BANK_BRANCH || 'Main Branch'
 }
 
 // Payment amounts
 export const paymentAmounts = {
-  INR: 500,
-  USD: 7,
+  ENTRY_FEE: 500,  // ₹500 entry fee
+  CURRENCY: 'INR'
 }
 
-// Currency detection based on user location
-export const detectCurrency = () => {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  return timezone.includes('Asia/Kolkata') || timezone.includes('Asia/Calcutta') ? 'INR' : 'USD'
+// Payment status
+export const paymentStatus = {
+  PENDING: 'pending',
+  VERIFIED: 'verified',
+  REJECTED: 'rejected'
 }
