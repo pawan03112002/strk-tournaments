@@ -16,6 +16,11 @@ const TournamentRegistration = () => {
   const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
   const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
   
+  const [teamLogo, setTeamLogo] = useState(null)
+  const [logoPreview, setLogoPreview] = useState(null)
+  const [showExistingTeamModal, setShowExistingTeamModal] = useState(false)
+  const [existingTeam, setExistingTeam] = useState(null)
+  
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
@@ -23,11 +28,6 @@ const TournamentRegistration = () => {
       navigate('/login')
     }
   }, [user, navigate])
-
-  const [teamLogo, setTeamLogo] = useState(null)
-  const [logoPreview, setLogoPreview] = useState(null)
-  const [showExistingTeamModal, setShowExistingTeamModal] = useState(false)
-  const [existingTeam, setExistingTeam] = useState(null)
 
   const [formData, setFormData] = useState({
     teamName: '',
