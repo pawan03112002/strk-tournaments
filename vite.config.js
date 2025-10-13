@@ -9,6 +9,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    sourcemap: true, // Enable source maps for debugging
+    minify: 'esbuild', // Use esbuild (faster and built-in)
+  },
   server: {
     port: 3000,
     proxy: {
