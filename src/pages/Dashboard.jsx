@@ -137,18 +137,18 @@ const Dashboard = () => {
               <div className="flex-1">
                 <h3 className="text-red-400 font-bold text-lg">Payment Rejected</h3>
                 <p className="text-gray-300 text-sm mt-1">
-                  Reason: {userPayment.rejectionReason || 'Invalid payment proof'}
+                  <strong>Reason:</strong> {userPayment.rejectionReason || 'Invalid payment proof'}
                 </p>
                 <p className="text-yellow-400 text-sm mt-2 font-semibold">
-                  ⚠️ Please register again with correct payment proof.
+                  ⚠️ Please register again with correct payment proof using the button below.
                 </p>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* Participate Button - Show if: no team AND (no payment OR payment rejected) */}
-        {!myTeam && (!userPayment || userPayment.status === 'rejected') && (
+        {/* Participate Button - Show if: (no payment OR payment rejected) regardless of team status */}
+        {(!userPayment || userPayment.status === 'rejected') && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -277,15 +277,15 @@ const Dashboard = () => {
             <p className="text-gray-500 text-xs mt-1">Update your info</p>
           </button>
 
-          {/* Only show Register Team button if user doesn't have a team AND (no payment OR rejected) */}
-          {!myTeam && (!userPayment || userPayment.status === 'rejected') && (
+          {/* Show Register Team button if (no payment OR rejected) */}
+          {(!userPayment || userPayment.status === 'rejected') && (
             <button
               onClick={() => navigate('/tournament-registration')}
               className="card hover:bg-white/5 transition-all group"
             >
               <Users className="w-8 h-8 text-gray-400 group-hover:text-green-400 mb-3 mx-auto" />
-              <p className="text-white font-bold">Register Team</p>
-              <p className="text-gray-500 text-xs mt-1">Join tournament</p>
+              <p className="text-white font-bold">{userPayment?.status === 'rejected' ? 'Re-register Team' : 'Register Team'}</p>
+              <p className="text-gray-500 text-xs mt-1">{userPayment?.status === 'rejected' ? 'Try again with correct payment' : 'Join tournament'}</p>
             </button>
           )}
 
