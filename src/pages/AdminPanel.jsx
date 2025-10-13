@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, resetPayment, deletePayment, formatCurrency } from '../services/paymentService'
 import { auth, db } from '../config/firebase'
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 
 const AdminPanel = () => {
@@ -526,36 +526,6 @@ const AdminPanel = () => {
     }
   }
 
-  // Handle forgot password (simple version for settings page)
-  const handleForgotPassword = async (e) => {
-    e.preventDefault()
-    
-    if (!forgotPasswordEmail) {
-      toast.error('Please enter admin email!')
-      return
-    }
-
-    if (!resetNewPassword) {
-      toast.error('Please enter a new password!')
-      return
-    }
-
-    if (resetNewPassword.length < 6) {
-      toast.error('Password must be at least 6 characters!')
-      return
-    }
-
-    toast.loading('Resetting password...', { id: 'forgot-pwd' })
-    const result = await resetAdminPassword(forgotPasswordEmail, resetNewPassword)
-    if (result.success) {
-      toast.success(result.message || 'Password reset successfully!', { id: 'forgot-pwd' })
-      setForgotPasswordEmail('')
-      setResetNewPassword('')
-      setShowForgotPassword(false)
-    } else {
-      toast.error(result.message, { id: 'forgot-pwd' })
-    }
-  }
 
   // Bulk actions
   const handleBulkUpgrade = (stage) => {
@@ -703,6 +673,37 @@ const AdminPanel = () => {
     }
   }
 
+  // Handle forgot password - Send Firebase password reset email
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    
+    if (!auth) {
+      toast.error('Firebase not initialized')
+      return
+    }
+    
+    if (!forgotPasswordEmail) {
+      toast.error('Please enter your admin email')
+      return
+    }
+    
+    try {
+      await sendPasswordResetEmail(auth, forgotPasswordEmail)
+      toast.success(`Password reset email sent to ${forgotPasswordEmail}. Check your inbox!`)
+      setShowForgotPassword(false)
+      setForgotPasswordEmail('')
+    } catch (error) {
+      console.error('Password reset error:', error)
+      if (error.code === 'auth/user-not-found') {
+        toast.error('No admin account found with this email')
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('Invalid email address')
+      } else {
+        toast.error('Failed to send reset email: ' + error.message)
+      }
+    }
+  }
+
   // Filter and sort teams
   const filteredTeams = registeredTeams
     .filter(team => {
@@ -822,6 +823,14 @@ const AdminPanel = () => {
                 {authLoading ? 'Signing in...' : 'Sign In'}
               </button>
               
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-red-500 hover:text-red-400 transition-colors text-sm w-full mt-3"
+              >
+                Forgot Password?
+              </button>
+              
               <div className="text-center">
                 <p className="text-xs text-gray-500 mt-4">
                   🔒 Secured with Firebase Authentication
@@ -829,125 +838,45 @@ const AdminPanel = () => {
               </div>
             </form>
           ) : (
-            <>
-              {/* Step indicator */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${forgotPasswordStep >= 1 ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-                    1
-                  </div>
-                  <div className={`w-12 h-0.5 ${forgotPasswordStep >= 2 ? 'bg-red-500' : 'bg-gray-700'}`} />
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${forgotPasswordStep >= 2 ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-                    2
-                  </div>
-                  <div className={`w-12 h-0.5 ${forgotPasswordStep >= 3 ? 'bg-red-500' : 'bg-gray-700'}`} />
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${forgotPasswordStep >= 3 ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-                    3
-                  </div>
-                </div>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="text-center mb-4">
+                <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
+                <p className="text-gray-400 text-sm">
+                  Enter your admin email and we'll send you a password reset link
+                </p>
               </div>
 
-              {/* Step 1: Enter Email */}
-              {forgotPasswordStep === 1 && (
-                <form onSubmit={handleSendForgotPasswordOTP}>
-                  <div className="mb-4">
-                    <label className="block text-gray-400 mb-2 text-sm font-bold">Admin Email</label>
-                    <input
-                      type="email"
-                      value={forgotPasswordEmail}
-                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                      placeholder="Enter admin email"
-                      className="input-field"
-                      required
-                    />
-                    <p className="text-xs text-blue-400 mt-1">🔐 Default: {adminEmail}</p>
-                  </div>
-                  
-                  <button type="submit" className="btn-primary w-full mb-3">
-                    Send OTP
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotPassword(false)
-                      setForgotPasswordStep(1)
-                      setForgotPasswordEmail('')
-                    }}
-                    className="btn-secondary w-full"
-                  >
-                    Back to Login
-                  </button>
-                </form>
-              )}
-
-              {/* Step 2: Verify OTP */}
-              {forgotPasswordStep === 2 && (
-                <form onSubmit={handleVerifyForgotPasswordOTP}>
-                  <div className="mb-4">
-                    <label className="block text-gray-400 mb-2 text-sm font-bold">Enter OTP</label>
-                    <input
-                      type="text"
-                      value={forgotPasswordOTP}
-                      onChange={(e) => setForgotPasswordOTP(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="000000"
-                      className="input-field text-center text-2xl tracking-widest"
-                      maxLength={6}
-                      required
-                    />
-                    <p className="text-xs text-yellow-400 mt-1">📧 Check your email: {forgotPasswordEmail}</p>
-                  </div>
-                  
-                  <button type="submit" className="btn-primary w-full mb-3" disabled={forgotPasswordOTP.length !== 6}>
-                    Verify OTP
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => setForgotPasswordStep(1)}
-                    className="btn-secondary w-full"
-                  >
-                    Back
-                  </button>
-                </form>
-              )}
-
-              {/* Step 3: New Password */}
-              {forgotPasswordStep === 3 && (
-                <form onSubmit={handleResetAdminPassword}>
-                  <div className="mb-4">
-                    <label className="block text-gray-400 mb-2 text-sm font-bold">New Password</label>
-                    <input
-                      type="password"
-                      value={resetNewPassword}
-                      onChange={(e) => setResetNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                      className="input-field"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">🔒 Minimum 6 characters</p>
-                  </div>
-                  
-                  <button type="submit" className="btn-primary w-full mb-3">
-                    Reset Password
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotPassword(false)
-                      setForgotPasswordStep(1)
-                      setForgotPasswordEmail('')
-                      setResetNewPassword('')
-                      setForgotPasswordOTP('')
-                    }}
-                    className="btn-secondary w-full"
-                  >
-                    Cancel
-                  </button>
-                </form>
-              )}
-            </>
+              <div>
+                <label className="block text-gray-400 mb-2 text-sm font-medium">Admin Email</label>
+                <input
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder="admin@strk-tournaments.com"
+                  className="input-field w-full"
+                  required
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 You'll receive a password reset link via email
+                </p>
+              </div>
+              
+              <button type="submit" className="btn-primary w-full">
+                Send Reset Link
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setForgotPasswordEmail('')
+                }}
+                className="btn-secondary w-full"
+              >
+                Back to Login
+              </button>
+            </form>
           )}
 
           <button
