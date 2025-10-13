@@ -62,6 +62,13 @@ const AdminPanel = () => {
     try {
       const allPayments = await getAllPayments()
       
+      // Ensure allPayments is an array
+      if (!Array.isArray(allPayments)) {
+        console.warn('getAllPayments did not return an array:', allPayments)
+        setPayments([])
+        return
+      }
+      
       let filtered = allPayments
       if (paymentFilter === 'pending') {
         filtered = allPayments.filter(p => p.status === 'pending')
@@ -75,6 +82,7 @@ const AdminPanel = () => {
     } catch (error) {
       console.error('Error loading payments:', error)
       toast.error('Failed to load payments from Firebase')
+      setPayments([]) // Set empty array on error
     }
   }
 
