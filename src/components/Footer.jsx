@@ -3,7 +3,20 @@ import { Trophy, Mail, Phone, Facebook, Twitter, Instagram, MessageCircle, Youtu
 import useSettingsStore from '../store/settingsStore'
 
 const Footer = () => {
-  const { socialMedia, support } = useSettingsStore()
+  // Safe access with defaults to prevent TDZ errors
+  const socialMedia = useSettingsStore((state) => state?.socialMedia || {
+    facebook: { enabled: false, url: '' },
+    twitter: { enabled: false, url: '' },
+    instagram: { enabled: false, url: '' },
+    discord: { enabled: false, url: '' },
+    youtube: { enabled: false, url: '' },
+    whatsapp: { enabled: false, number: '' }
+  })
+  
+  const support = useSettingsStore((state) => state?.support || {
+    email: { enabled: false, address: '' },
+    phone: { enabled: false, number: '' }
+  })
 
   return (
     <footer className="bg-gray-900/50 backdrop-blur-lg border-t border-gray-800">
