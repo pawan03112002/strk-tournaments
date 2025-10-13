@@ -155,11 +155,10 @@ const useTournamentStore = create(
             registeredTeams: state.registeredTeams.filter((team) => team.teamId !== teamId)
           }))
           
-          // Delete associated payment record
+          // Delete associated payment record from Firestore
           try {
-            const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
-            const filteredPayments = payments.filter(p => p.teamId !== teamId)
-            localStorage.setItem('pendingPayments', JSON.stringify(filteredPayments))
+            const { deletePaymentByTeamId } = await import('../services/paymentService')
+            await deletePaymentByTeamId(teamId)
             console.log('Associated payment deleted for team:', teamId)
           } catch (paymentError) {
             console.warn('Error deleting payment for team:', paymentError)
@@ -236,11 +235,10 @@ const useTournamentStore = create(
             registeredTeams: state.registeredTeams.filter((team) => !teamIds.includes(team.teamId))
           }))
           
-          // Delete associated payment records
+          // Delete associated payment records from Firestore
           try {
-            const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
-            const filteredPayments = payments.filter(p => !teamIds.includes(p.teamId))
-            localStorage.setItem('pendingPayments', JSON.stringify(filteredPayments))
+            const { deletePaymentByTeamId } = await import('../services/paymentService')
+            await Promise.all(teamIds.map(teamId => deletePaymentByTeamId(teamId)))
             console.log('Associated payments deleted for teams:', teamIds)
           } catch (paymentError) {
             console.warn('Error deleting payments for teams:', paymentError)

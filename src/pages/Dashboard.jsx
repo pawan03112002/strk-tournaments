@@ -24,10 +24,13 @@ const Dashboard = () => {
 
   // Check user's payment status
   useEffect(() => {
-    if (user?.email) {
-      const payment = getUserPaymentStatus(user.email)
-      setUserPayment(payment)
+    const loadUserPayment = async () => {
+      if (user?.email) {
+        const payment = await getUserPaymentStatus(user.email)
+        setUserPayment(payment)
+      }
     }
+    loadUserPayment()
   }, [user, registeredTeams]) // Re-check when teams update
 
   if (!user) {

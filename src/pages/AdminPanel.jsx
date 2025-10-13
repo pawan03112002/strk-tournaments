@@ -55,19 +55,24 @@ const AdminPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loadPayments = () => {
-    const allPayments = getAllPayments()
-    
-    let filtered = allPayments
-    if (paymentFilter === 'pending') {
-      filtered = allPayments.filter(p => p.status === 'pending')
-    } else if (paymentFilter === 'verified') {
-      filtered = allPayments.filter(p => p.status === 'verified')
-    } else if (paymentFilter === 'rejected') {
-      filtered = allPayments.filter(p => p.status === 'rejected')
+  const loadPayments = async () => {
+    try {
+      const allPayments = await getAllPayments()
+      
+      let filtered = allPayments
+      if (paymentFilter === 'pending') {
+        filtered = allPayments.filter(p => p.status === 'pending')
+      } else if (paymentFilter === 'verified') {
+        filtered = allPayments.filter(p => p.status === 'verified')
+      } else if (paymentFilter === 'rejected') {
+        filtered = allPayments.filter(p => p.status === 'rejected')
+      }
+      
+      setPayments(filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
+    } catch (error) {
+      console.error('Error loading payments:', error)
+      toast.error('Failed to load payments from Firebase')
     }
-    
-    setPayments(filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
   }
 
   // Load payments when payments tab is active
