@@ -37,20 +37,21 @@ const AdminPanel = () => {
   const [rejectionReason, setRejectionReason] = useState('')
   const [paymentLoading, setPaymentLoading] = useState(false)
   
-  // Settings store - Safe access with optional chaining to prevent TDZ errors
-  const socialMedia = useSettingsStore((state) => state?.socialMedia) || {}
-  const support = useSettingsStore((state) => state?.support) || {}
-  const tournamentSettings = useSettingsStore((state) => state?.tournamentSettings) || {}
-  const updateSocialMedia = useSettingsStore((state) => state?.updateSocialMedia) || (() => Promise.resolve({ success: false }))
-  const updateSupport = useSettingsStore((state) => state?.updateSupport) || (() => Promise.resolve({ success: false }))
-  const changeAdminPassword = useSettingsStore((state) => state?.changeAdminPassword) || (() => Promise.resolve({ success: false }))
-  const updateAdminEmail = useSettingsStore((state) => state?.updateAdminEmail) || (() => ({ success: false }))
-  const adminEmail = useSettingsStore((state) => state?.adminEmail) || 'strk.tournaments@gmail.com'
-  const resetAdminPassword = useSettingsStore((state) => state?.resetAdminPassword) || (() => Promise.resolve({ success: false }))
-  const verifyAdminPassword = useSettingsStore((state) => state?.verifyAdminPassword) || (() => false)
-  const loadAdminCredentials = useSettingsStore((state) => state?.loadAdminCredentials) || (() => Promise.resolve({ success: false }))
-  const loadSettings = useSettingsStore((state) => state?.loadSettings) || (() => Promise.resolve({ success: false }))
-  const isAdminLoaded = useSettingsStore((state) => state?.isAdminLoaded) || false
+  // Settings store - Use entire store object to reduce subscriptions
+  const settingsStore = useSettingsStore()
+  const socialMedia = settingsStore?.socialMedia || {}
+  const support = settingsStore?.support || {}
+  const tournamentSettings = settingsStore?.tournamentSettings || {}
+  const updateSocialMedia = settingsStore?.updateSocialMedia || (() => Promise.resolve({ success: false }))
+  const updateSupport = settingsStore?.updateSupport || (() => Promise.resolve({ success: false }))
+  const changeAdminPassword = settingsStore?.changeAdminPassword || (() => Promise.resolve({ success: false }))
+  const updateAdminEmail = settingsStore?.updateAdminEmail || (() => ({ success: false }))
+  const adminEmail = settingsStore?.adminEmail || 'strk.tournaments@gmail.com'
+  const resetAdminPassword = settingsStore?.resetAdminPassword || (() => Promise.resolve({ success: false }))
+  const verifyAdminPassword = settingsStore?.verifyAdminPassword || (() => false)
+  const loadAdminCredentials = settingsStore?.loadAdminCredentials || (() => Promise.resolve({ success: false }))
+  const loadSettings = settingsStore?.loadSettings || (() => Promise.resolve({ success: false }))
+  const isAdminLoaded = settingsStore?.isAdminLoaded || false
 
   // Load admin credentials and settings from Firebase on component mount (only once)
   useEffect(() => {

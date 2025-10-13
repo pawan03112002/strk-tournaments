@@ -14,8 +14,9 @@ const TournamentRegistration = () => {
   const registerTeam = useTournamentStore((state) => state.registerTeam)
   const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
   const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
-  const tournamentSettings = useSettingsStore((state) => state?.tournamentSettings) || {}
-  const loadSettings = useSettingsStore((state) => state?.loadSettings) || (() => Promise.resolve({ success: false }))
+  const settingsStore = useSettingsStore()
+  const tournamentSettings = settingsStore?.tournamentSettings || {}
+  const loadSettings = settingsStore?.loadSettings || (() => Promise.resolve({ success: false }))
   
   const [teamLogo, setTeamLogo] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)

@@ -12,10 +12,11 @@ export default function ManualPayment() {
   const location = useLocation()
   const registrationData = location.state?.registrationData || {}
 
-  // Get settings from store - Safe access with optional chaining
-  const paymentSettings = useSettingsStore((state) => state?.paymentSettings) || {}
-  const tournamentSettings = useSettingsStore((state) => state?.tournamentSettings) || {}
-  const loadSettings = useSettingsStore((state) => state?.loadSettings) || (() => Promise.resolve({ success: false }))
+  // Get settings from store - Single subscription to reduce renders
+  const settingsStore = useSettingsStore()
+  const paymentSettings = settingsStore?.paymentSettings || {}
+  const tournamentSettings = settingsStore?.tournamentSettings || {}
+  const loadSettings = settingsStore?.loadSettings || (() => Promise.resolve({ success: false }))
 
   // Load settings from Firebase on mount
   useEffect(() => {
