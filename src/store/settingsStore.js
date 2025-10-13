@@ -21,10 +21,11 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-// Firebase settings document references (only if db is available)
-const adminSettingsRef = db ? doc(db, 'adminSettings', 'credentials') : null
+// Helper functions to get Firebase document references (lazy initialization to avoid db access before init)
+const getAdminSettingsRef = () => {
+  return db ? doc(db, 'adminSettings', 'credentials') : null
+}
 
-// Helper function to get websiteSettings reference
 const getWebsiteSettingsRef = () => {
   return db ? doc(db, 'websiteSettings', 'config') : null
 }
@@ -180,6 +181,7 @@ const useSettingsStore = create(
         try {
           set({ adminPassword: newPassword })
           
+          const adminSettingsRef = getAdminSettingsRef()
           // Only save to Firebase if available
           if (!adminSettingsRef) {
             return { success: true, message: 'Password changed locally (Firebase not configured)' }
@@ -217,6 +219,7 @@ const useSettingsStore = create(
           if (email === state.adminEmail) {
             set({ adminPassword: newPassword })
             
+            const adminSettingsRef = getAdminSettingsRef()
             // Only save to Firebase if available
             if (!adminSettingsRef) {
               return { success: true, message: 'Password reset locally (Firebase not configured)' }
