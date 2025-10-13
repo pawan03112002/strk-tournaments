@@ -259,12 +259,13 @@ try {
       }
     }))
   
+  console.log('✅ settingsStore created successfully')
 } catch (error) {
   console.error('❌ CRITICAL ERROR creating settingsStore:', error)
   console.error('Error stack:', error.stack)
   
   // Create a fallback store with no-op functions
-  const useSettingsStore = create((set, get) => ({
+  useSettingsStore = create((set, get) => ({
     socialMedia: { facebook: { enabled: false }, twitter: { enabled: false }, instagram: { enabled: false }, discord: { enabled: false }, youtube: { enabled: false }, whatsapp: { enabled: false } },
     support: { email: { enabled: false }, phone: { enabled: false } },
     tournamentSettings: { registrationFee: 500, maxTeams: 100, currency: 'INR' },
