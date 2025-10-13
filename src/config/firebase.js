@@ -13,18 +13,15 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abc123"
 }
 
-// Debug: Log config (REMOVE IN PRODUCTION)
+// Debug: Log config
 console.log('🔧 Firebase Config:', {
   projectId: firebaseConfig.projectId,
   authDomain: firebaseConfig.authDomain,
   hasApiKey: !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'AIzaSyDummy_Key_Replace_This'
 })
 
-// Initialize Firebase
-let app = null
-let auth = null
-let db = null
-let storage = null
+// Initialize Firebase IMMEDIATELY and SYNCHRONOUSLY
+let app, auth, db, storage
 
 try {
   app = initializeApp(firebaseConfig)
@@ -35,6 +32,11 @@ try {
 } catch (error) {
   console.error('❌ Firebase initialization error:', error)
   console.warn('📝 Add Firebase credentials to .env file or Vercel environment variables')
+  // Set to null on error so imports don't fail
+  app = null
+  auth = null
+  db = null
+  storage = null
 }
 
 export { auth, db, storage }
