@@ -15,6 +15,7 @@ const TournamentRegistration = () => {
   const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
   const getTotalTeams = useTournamentStore((state) => state.getTotalTeams)
   const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
+  const loadSettings = useSettingsStore((state) => state.loadSettings)
   
   const [teamLogo, setTeamLogo] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
@@ -23,6 +24,11 @@ const TournamentRegistration = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [assignedTeamNumber, setAssignedTeamNumber] = useState('')
   const [currency, setCurrency] = useState('INR')
+  
+  // Load settings from Firebase on mount
+  useEffect(() => {
+    loadSettings()
+  }, [])
   
   // Redirect to login if not authenticated
   useEffect(() => {

@@ -21,8 +21,9 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-// Firebase admin settings document reference (only if db is available)
+// Firebase settings document references (only if db is available)
 const adminSettingsRef = db ? doc(db, 'adminSettings', 'credentials') : null
+const websiteSettingsRef = db ? doc(db, 'websiteSettings', 'config') : null
 
 const useSettingsStore = create(
   persist(
@@ -66,24 +67,87 @@ const useSettingsStore = create(
         bankBranch: 'Main Branch'
       },
 
+      // Load all settings from Firebase
+      loadSettings: async () => {
+        try {
+          if (!websiteSettingsRef) {
+            console.warn('Firebase not configured, using local settings')
+            return { success: false, message: 'Firebase not configured' }
+          }
+
+          const docSnap = await getDoc(websiteSettingsRef)
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            set({
+              socialMedia: data.socialMedia || useSettingsStore.getState().socialMedia,
+              support: data.support || useSettingsStore.getState().support,
+              tournamentSettings: data.tournamentSettings || useSettingsStore.getState().tournamentSettings,
+              paymentSettings: data.paymentSettings || useSettingsStore.getState().paymentSettings
+            })
+            return { success: true, message: 'Settings loaded from Firebase' }
+          } else {
+            // Create initial settings document
+            const initialSettings = {
+              socialMedia: useSettingsStore.getState().socialMedia,
+              support: useSettingsStore.getState().support,
+              tournamentSettings: useSettingsStore.getState().tournamentSettings,
+              paymentSettings: useSettingsStore.getState().paymentSettings,
+              lastModified: new Date().toISOString()
+            }
+            await setDoc(websiteSettingsRef, initialSettings)
+            return { success: true, message: 'Initial settings created in Firebase' }
+          }
+        } catch (error) {
+          console.error('Error loading settings:', error)
+          return { success: false, error: error.message }
+        }
+      },
+
+      // Save all settings to Firebase
+      saveSettings: async () => {
+        try {
+          if (!websiteSettingsRef) {
+            return { success: false, message: 'Firebase not configured' }
+          }
+
+          const state = useSettingsStore.getState()
+          await setDoc(websiteSettingsRef, {
+            socialMedia: state.socialMedia,
+            support: state.support,
+            tournamentSettings: state.tournamentSettings,
+            paymentSettings: state.paymentSettings,
+            lastModified: new Date().toISOString()
+          })
+
+          return { success: true, message: 'Settings saved to Firebase' }
+        } catch (error) {
+          console.error('Error saving settings:', error)
+          return { success: false, error: error.message }
+        }
+      },
+
       // Update social media
-      updateSocialMedia: (platform, data) => {
+      updateSocialMedia: async (platform, data) => {
         set((state) => ({
           socialMedia: {
             ...state.socialMedia,
             [platform]: { ...state.socialMedia[platform], ...data }
           }
         }))
+        // Save to Firebase
+        return await useSettingsStore.getState().saveSettings()
       },
 
       // Update support contact
-      updateSupport: (type, data) => {
+      updateSupport: async (type, data) => {
         set((state) => ({
           support: {
             ...state.support,
             [type]: { ...state.support[type], ...data }
           }
         }))
+        // Save to Firebase
+        return await useSettingsStore.getState().saveSettings()
       },
 
       // Load admin credentials - using default password (no Firebase dependency)
@@ -174,37 +238,36 @@ const useSettingsStore = create(
       },
 
       // Update tournament settings
-      updateTournamentSettings: (newSettings) => {
+      updateTournamentSettings: async (newSettings) => {
         set((state) => ({
           tournamentSettings: {
             ...state.tournamentSettings,
             ...newSettings
           }
         }))
-        return { success: true, message: 'Tournament settings updated!' }
+        // Save to Firebase
+        return await useSettingsStore.getState().saveSettings()
       },
 
       // Update payment settings
-      updatePaymentSettings: (newSettings) => {
+      updatePaymentSettings: async (newSettings) => {
         set((state) => ({
           paymentSettings: {
             ...state.paymentSettings,
             ...newSettings
           }
         }))
-        return { success: true, message: 'Payment settings updated!' }
+        // Save to Firebase
+        return await useSettingsStore.getState().saveSettings()
       }
     }),
     {
       name: 'settings-storage',
       partialize: (state) => ({
-        // Only persist these fields to localStorage, exclude adminPassword for security
-        socialMedia: state.socialMedia,
-        support: state.support,
-        tournamentSettings: state.tournamentSettings,
-        paymentSettings: state.paymentSettings,
+        // Only persist adminEmail locally, all other settings come from Firebase
         adminEmail: state.adminEmail,
         // adminPassword is NOT persisted to localStorage, only loaded from Firebase
+        // socialMedia, support, tournamentSettings, paymentSettings are loaded from Firebase
       })
     }
   )

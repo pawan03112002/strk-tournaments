@@ -49,13 +49,16 @@ const AdminPanel = () => {
   const resetAdminPassword = useSettingsStore((state) => state.resetAdminPassword)
   const verifyAdminPassword = useSettingsStore((state) => state.verifyAdminPassword)
   const loadAdminCredentials = useSettingsStore((state) => state.loadAdminCredentials)
+  const loadSettings = useSettingsStore((state) => state.loadSettings)
   const isAdminLoaded = useSettingsStore((state) => state.isAdminLoaded)
 
-  // Load admin credentials from Firebase on component mount (only once)
+  // Load admin credentials and settings from Firebase on component mount (only once)
   useEffect(() => {
     if (!isAdminLoaded) {
       loadAdminCredentials()
     }
+    // Load website settings from Firebase
+    loadSettings()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -383,29 +386,30 @@ const AdminPanel = () => {
   }
 
   // Settings handlers
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     console.log('Saving settings:', settingsForm)
+    toast.loading('Saving settings to Firebase...', { id: 'save-settings' })
     
-    // Save all social media settings
-    Object.keys(settingsForm).forEach(key => {
-      if (['facebook', 'twitter', 'instagram', 'discord', 'youtube', 'whatsapp'].includes(key)) {
-        console.log(`Updating ${key}:`, settingsForm[key])
-        updateSocialMedia(key, settingsForm[key])
-      } else if (key === 'supportEmail') {
-        console.log('Updating support email:', settingsForm[key])
-        updateSupport('email', settingsForm[key])
-      } else if (key === 'supportPhone') {
-        console.log('Updating support phone:', settingsForm[key])
-        updateSupport('phone', settingsForm[key])
+    try {
+      // Save all social media settings
+      for (const key of Object.keys(settingsForm)) {
+        if (['facebook', 'twitter', 'instagram', 'discord', 'youtube', 'whatsapp'].includes(key)) {
+          console.log(`Updating ${key}:`, settingsForm[key])
+          await updateSocialMedia(key, settingsForm[key])
+        } else if (key === 'supportEmail') {
+          console.log('Updating support email:', settingsForm[key])
+          await updateSupport('email', settingsForm[key])
+        } else if (key === 'supportPhone') {
+          console.log('Updating support phone:', settingsForm[key])
+          await updateSupport('phone', settingsForm[key])
+        }
       }
-    })
-    
-    // Log the store state after update
-    setTimeout(() => {
-      console.log('Store after save:', useSettingsStore.getState())
-    }, 100)
-    
-    toast.success('Settings saved successfully! Refresh page to see changes.')
+      
+      toast.success('Settings saved to Firebase successfully!', { id: 'save-settings' })
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      toast.error('Failed to save settings: ' + error.message, { id: 'save-settings' })
+    }
   }
 
   const handleUpdateSettingsForm = (platform, field, value) => {
@@ -1798,10 +1802,13 @@ const AdminPanel = () => {
                 </div>
 
                 <button
-                  onClick={() => {
-                    const result = useSettingsStore.getState().updateTournamentSettings(settingsForm.tournamentSettings)
+                  onClick={async () => {
+                    toast.loading('Saving tournament settings...', { id: 'tournament-settings' })
+                    const result = await useSettingsStore.getState().updateTournamentSettings(settingsForm.tournamentSettings)
                     if (result.success) {
-                      toast.success('Tournament settings updated!')
+                      toast.success('Tournament settings saved to Firebase!', { id: 'tournament-settings' })
+                    } else {
+                      toast.error('Failed to save: ' + result.message, { id: 'tournament-settings' })
                     }
                   }}
                   className="btn-primary mt-6"
@@ -2018,10 +2025,13 @@ const AdminPanel = () => {
                 </div>
 
                 <button
-                  onClick={() => {
-                    const result = useSettingsStore.getState().updatePaymentSettings(settingsForm.paymentSettings)
+                  onClick={async () => {
+                    toast.loading('Saving payment settings...', { id: 'payment-settings' })
+                    const result = await useSettingsStore.getState().updatePaymentSettings(settingsForm.paymentSettings)
                     if (result.success) {
-                      toast.success('Payment settings updated!')
+                      toast.success('Payment settings saved to Firebase!', { id: 'payment-settings' })
+                    } else {
+                      toast.error('Failed to save: ' + result.message, { id: 'payment-settings' })
                     }
                   }}
                   className="btn-primary"

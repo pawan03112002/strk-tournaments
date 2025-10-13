@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Upload, Check, Copy } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -15,6 +15,12 @@ export default function ManualPayment() {
   // Get settings from store
   const paymentSettings = useSettingsStore((state) => state.paymentSettings)
   const tournamentSettings = useSettingsStore((state) => state.tournamentSettings)
+  const loadSettings = useSettingsStore((state) => state.loadSettings)
+
+  // Load settings from Firebase on mount
+  useEffect(() => {
+    loadSettings()
+  }, [])
 
   const [selectedMethod, setSelectedMethod] = useState(paymentMethods.UPI)
   const [transactionId, setTransactionId] = useState('')
