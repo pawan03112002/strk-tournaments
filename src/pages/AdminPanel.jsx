@@ -589,29 +589,118 @@ const AdminPanel = () => {
     }
   }
 
-  // Simple password-based authentication
+  // Firebase Authentication for Admin
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [currentUser, setCurrentUser] = useState(null)
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    
-    // Simple password check - default password
-    const correctPassword = 'STRK@Tournament#2025!Secure'
-    
-    if (password === correctPassword) {
-      setIsAuthenticated(true)
-      toast.success('Login successful!')
-    } else {
-      toast.error('Invalid password')
+  // Check if user is admin by checking Firestore
+  const checkIfAdmin = async (uid) => {
+    try {
+      if (!db) return false
+      
+      const adminDoc = await getDoc(doc(db, 'adminSettings', 'admins'))
+      if (adminDoc.exists()) {
+        const adminUIDs = adminDoc.data().adminUIDs || []
+        return adminUIDs.includes(uid)
+      }
+      return false
+    } catch (error) {
+      console.error('Error checking admin status:', error)
+      return false
     }
   }
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    setPassword('')
-    toast.success('Logged out successfully')
-    navigate('/')
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    if (!auth) {
+      setAuthLoading(false)
+      return
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in
+        setCurrentUser(user)
+        
+        // Check if this user is an admin
+        const adminStatus = await checkIfAdmin(user.uid)
+        setIsAdmin(adminStatus)
+        setIsAuthenticated(adminStatus)
+        
+        if (!adminStatus) {
+          toast.error('Access denied. Admin privileges required.')
+          await signOut(auth)
+        }
+      } else {
+        // User is signed out
+        setCurrentUser(null)
+        setIsAuthenticated(false)
+        setIsAdmin(false)
+      }
+      setAuthLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // Handle Firebase login
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    
+    if (!auth) {
+      toast.error('Firebase not initialized. Please configure Firebase.')
+      return
+    }
+    
+    setAuthLoading(true)
+    try {
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      
+      // Check if user is admin
+      const adminStatus = await checkIfAdmin(userCredential.user.uid)
+      
+      if (adminStatus) {
+        setIsAuthenticated(true)
+        setIsAdmin(true)
+        toast.success('Login successful!')
+      } else {
+        // Not an admin, sign out
+        await signOut(auth)
+        toast.error('Access denied. Admin privileges required.')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      if (error.code === 'auth/invalid-credential') {
+        toast.error('Invalid email or password')
+      } else if (error.code === 'auth/user-not-found') {
+        toast.error('No admin account found with this email')
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error('Invalid password')
+      } else {
+        toast.error('Login failed: ' + error.message)
+      }
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      setIsAuthenticated(false)
+      setIsAdmin(false)
+      setCurrentUser(null)
+      toast.success('Logged out successfully')
+      navigate('/')
+    } catch (error) {
+      toast.error('Logout failed')
+    }
   }
 
   // Filter and sort teams
@@ -673,6 +762,17 @@ const AdminPanel = () => {
   }
 
   // Login Screen
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -684,34 +784,47 @@ const AdminPanel = () => {
           <div className="text-center mb-6">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-white mb-2">Admin Panel</h1>
-            <p className="text-gray-400">Enter admin password</p>
+            <p className="text-gray-400">Sign in with Firebase Authentication</p>
           </div>
 
           {!showForgotPassword ? (
             <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-gray-400 mb-2 text-sm font-medium">Admin Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@strk-tournaments.com"
+                  className="input-field w-full"
+                  required
+                  autoFocus
+                />
+              </div>
+              
               <div>
                 <label className="block text-gray-400 mb-2 text-sm font-medium">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
+                  placeholder="Enter your password"
                   className="input-field w-full"
                   required
-                  autoFocus
                 />
               </div>
 
               <button 
                 type="submit" 
                 className="btn-primary w-full"
+                disabled={authLoading}
               >
-                Sign In
+                {authLoading ? 'Signing in...' : 'Sign In'}
               </button>
               
               <div className="text-center">
                 <p className="text-xs text-gray-500 mt-4">
-                  🔒 Default password: STRK@Tournament#2025!Secure
+                  🔒 Secured with Firebase Authentication
                 </p>
               </div>
             </form>
@@ -863,6 +976,11 @@ const AdminPanel = () => {
               <h1 className="text-4xl font-bold text-white mb-2">Admin Panel</h1>
               <p className="text-gray-400">
                 Manage tournament registrations
+                {currentUser && (
+                  <span className="text-sm text-gray-500 ml-2">
+                    • {currentUser.email}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex gap-3">
