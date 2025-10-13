@@ -138,6 +138,51 @@ export const rejectPayment = (paymentId, reason = '') => {
 }
 
 /**
+ * Get user's payment status by email
+ * @param {string} email - User email
+ */
+export const getUserPaymentStatus = (email) => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const userPayment = payments.find(p => p.contactEmail === email)
+    return userPayment || null
+  } catch (error) {
+    console.error('Error fetching user payment status:', error)
+    return null
+  }
+}
+
+/**
+ * Reset payment to pending (Admin function)
+ * @param {string} paymentId - Payment ID to reset
+ */
+export const resetPayment = (paymentId) => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const paymentIndex = payments.findIndex(p => p.id === paymentId)
+    
+    if (paymentIndex === -1) {
+      throw new Error('Payment not found')
+    }
+
+    payments[paymentIndex].status = 'pending'
+    payments[paymentIndex].verifiedAt = null
+    payments[paymentIndex].rejectedAt = null
+    payments[paymentIndex].rejectionReason = null
+    
+    localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    
+    return {
+      success: true,
+      message: 'Payment reset to pending successfully'
+    }
+  } catch (error) {
+    console.error('Error resetting payment:', error)
+    throw error
+  }
+}
+
+/**
  * Format currency for display
  */
 export const formatCurrency = (amount) => {
@@ -150,5 +195,7 @@ export default {
   getAllPayments,
   verifyPayment,
   rejectPayment,
+  getUserPaymentStatus,
+  resetPayment,
   formatCurrency
 }

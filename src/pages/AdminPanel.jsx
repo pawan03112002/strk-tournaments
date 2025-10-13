@@ -5,7 +5,7 @@ import useTournamentStore from '../store/tournamentStore'
 import useSettingsStore from '../store/settingsStore'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, formatCurrency } from '../services/paymentService'
+import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, resetPayment, formatCurrency } from '../services/paymentService'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
@@ -109,6 +109,22 @@ const AdminPanel = () => {
       setRejectionReason('')
     } catch (error) {
       toast.error('Failed to reject payment')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const handleResetPayment = async (paymentId) => {
+    if (!confirm('Reset this payment to pending status? This will allow re-verification.')) return
+
+    setPaymentLoading(true)
+    try {
+      await resetPayment(paymentId)
+      toast.success('Payment reset to pending successfully!')
+      loadPayments()
+      setSelectedPayment(null)
+    } catch (error) {
+      toast.error('Failed to reset payment')
     } finally {
       setPaymentLoading(false)
     }
@@ -1519,6 +1535,23 @@ const AdminPanel = () => {
                             <X className="w-5 h-5" />
                             Reject Payment
                           </button>
+                        </div>
+                      )}
+
+                      {/* Reset Button - Show for verified or rejected payments */}
+                      {(selectedPayment.status === 'verified' || selectedPayment.status === 'rejected') && (
+                        <div className="mt-4 pt-4 border-t border-gray-700">
+                          <button
+                            onClick={() => handleResetPayment(selectedPayment.id)}
+                            disabled={paymentLoading}
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <RefreshCw className="w-5 h-5" />
+                            Reset to Pending
+                          </button>
+                          <p className="text-xs text-gray-500 text-center mt-2">
+                            Reset payment to pending for re-verification
+                          </p>
                         </div>
                       )}
                     </div>

@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion'
-import { Trophy, Gamepad2, Users, Calendar, DollarSign, Award, Settings, LogOut } from 'lucide-react'
+import { Trophy, Gamepad2, Users, Calendar, DollarSign, Award, Settings, LogOut, CheckCircle, Clock, XCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import useTournamentStore from '../store/tournamentStore'
+import { getUserPaymentStatus } from '../services/paymentService'
+import { useState, useEffect } from 'react'
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
+  const [userPayment, setUserPayment] = useState(null)
   
   // Get team data from store - using hooks for reactivity
   const getTeamByEmail = useTournamentStore((state) => state.getTeamByEmail)
@@ -18,6 +21,14 @@ const Dashboard = () => {
   // Calculate values - this will re-run when store updates
   const myTeam = user?.email ? getTeamByEmail(user.email) : null
   const totalTeams = getTotalTeams()
+
+  // Check user's payment status
+  useEffect(() => {
+    if (user?.email) {
+      const payment = getUserPaymentStatus(user.email)
+      setUserPayment(payment)
+    }
+  }, [user, registeredTeams]) // Re-check when teams update
 
   if (!user) {
     navigate('/login')
@@ -70,8 +81,71 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Participate Button - Only show if user doesn't have a team */}
-        {!myTeam && (
+        {/* Payment Status Banner */}
+        {userPayment && userPayment.status === 'pending' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 card bg-yellow-500/20 border-2 border-yellow-500/50"
+          >
+            <div className="flex items-center gap-3">
+              <Clock className="w-8 h-8 text-yellow-400" />
+              <div className="flex-1">
+                <h3 className="text-yellow-400 font-bold text-lg">Payment Verification Pending</h3>
+                <p className="text-gray-300 text-sm mt-1">
+                  Your payment is under review. We'll notify you via email once verified.
+                </p>
+                <p className="text-gray-400 text-xs mt-1">Team: {userPayment.teamName}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {userPayment && userPayment.status === 'verified' && myTeam && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 card bg-green-500/20 border-2 border-green-500/50"
+          >
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-8 h-8 text-green-400" />
+              <div className="flex-1">
+                <h3 className="text-green-400 font-bold text-lg">Payment Verified! Registration Complete</h3>
+                <p className="text-gray-300 text-sm mt-1">
+                  Congratulations! Your team is officially registered.
+                </p>
+                <p className="text-white text-xl font-black mt-2">Your Team Number: #{myTeam.teamNumber}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {userPayment && userPayment.status === 'rejected' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 card bg-red-500/20 border-2 border-red-500/50"
+          >
+            <div className="flex items-center gap-3">
+              <XCircle className="w-8 h-8 text-red-400" />
+              <div className="flex-1">
+                <h3 className="text-red-400 font-bold text-lg">Payment Rejected</h3>
+                <p className="text-gray-300 text-sm mt-1">
+                  Reason: {userPayment.rejectionReason || 'Invalid payment proof'}
+                </p>
+                <p className="text-yellow-400 text-sm mt-2 font-semibold">
+                  ⚠️ Please register again with correct payment proof.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Participate Button - Show if: no team AND (no payment OR payment rejected) */}
+        {!myTeam && (!userPayment || userPayment.status === 'rejected') && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -200,8 +274,8 @@ const Dashboard = () => {
             <p className="text-gray-500 text-xs mt-1">Update your info</p>
           </button>
 
-          {/* Only show Register Team button if user doesn't have a team */}
-          {!myTeam && (
+          {/* Only show Register Team button if user doesn't have a team AND (no payment OR rejected) */}
+          {!myTeam && (!userPayment || userPayment.status === 'rejected') && (
             <button
               onClick={() => navigate('/tournament-registration')}
               className="card hover:bg-white/5 transition-all group"

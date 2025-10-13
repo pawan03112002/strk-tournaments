@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Upload, Check, Copy } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { submitManualPayment, formatCurrency } from '../services/paymentService'
 import { paymentMethods, upiConfig } from '../config/payment'
 import useSettingsStore from '../store/settingsStore'
@@ -25,6 +26,17 @@ export default function ManualPayment() {
 
   // Get amount from tournament settings
   const amount = tournamentSettings?.registrationFee || 500
+
+  // Generate dynamic UPI payment URL with amount (properly encoded)
+  const upiId = paymentSettings?.upiId || 'yourname@paytm'
+  const merchantName = encodeURIComponent('STRK Tournaments')
+  const transactionNote = encodeURIComponent('Tournament Registration')
+  
+  // Standard UPI URL (works on all platforms)
+  const upiPaymentUrl = `upi://pay?pa=${upiId}&pn=${merchantName}&am=${amount.toFixed(2)}&cu=INR&tn=${transactionNote}`
+  
+  // Android Intent URL (better compatibility for some apps)
+  const androidIntentUrl = `intent://pay?pa=${upiId}&pn=${merchantName}&am=${amount.toFixed(2)}&cu=INR&tn=${transactionNote}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -168,40 +180,90 @@ export default function ManualPayment() {
             <>
               <h2 className="text-xl font-bold text-white mb-4">UPI Payment Details</h2>
               
-              {/* QR Code */}
-              <div className="bg-white p-6 rounded-lg mb-4 text-center">
-                <p className="text-gray-800 font-bold mb-4">Scan QR Code to Pay</p>
-                <div className="inline-block bg-gray-200 p-4 rounded-lg">
-                  <img
-                    src={paymentSettings?.upiQrCodeUrl || '/upi-qr-code.png'}
-                    alt="UPI QR Code"
-                    className="w-48 h-48 mx-auto"
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                      e.target.nextSibling.style.display = 'block'
-                    }}
-                  />
-                  <div style={{ display: 'none' }} className="w-48 h-48 flex items-center justify-center text-gray-600">
-                    QR Code
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">Scan with any UPI app</p>
+              {/* AMOUNT WARNING - SUPER PROMINENT */}
+              <div className="bg-gradient-to-r from-red-600 to-orange-600 p-6 rounded-lg mb-4 text-center animate-pulse">
+                <p className="text-white text-sm font-bold mb-2">⚠️ IMPORTANT: ENTER THIS AMOUNT ⚠️</p>
+                <p className="text-white text-6xl font-black mb-2">₹{amount}</p>
+                <p className="text-white text-sm font-semibold">When your UPI app asks for amount, type: {amount}</p>
               </div>
 
-              {/* UPI ID */}
+              {/* Dynamic QR Code */}
+              <div className="bg-white p-6 rounded-lg mb-4 text-center border-4 border-red-600">
+                <p className="text-gray-800 font-bold mb-2 text-xl">Scan QR Code</p>
+                <p className="text-red-600 font-black text-2xl mb-4">PAY EXACTLY ₹{amount}</p>
+                <div className="inline-block bg-white p-4 rounded-lg border-2 border-gray-300">
+                  <QRCodeSVG 
+                    value={upiPaymentUrl}
+                    size={192}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="mt-4 bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
+                  <p className="text-yellow-900 font-bold text-lg">⚠️ Manual Amount Entry Required</p>
+                  <p className="text-yellow-800 text-sm mt-1">Your UPI app will ask you to enter the amount.</p>
+                  <p className="text-yellow-900 font-black text-xl mt-2">Type: ₹{amount}</p>
+                </div>
+              </div>
+
+              {/* UPI ID with Payment Link */}
               <div className="bg-gray-900 p-4 rounded-lg">
                 <p className="text-gray-400 text-sm mb-2">Or pay using UPI ID:</p>
-                <div className="flex items-center justify-between">
-                  <code className="text-lg text-white font-mono">{paymentSettings?.upiId || 'yourname@paytm'}</code>
+                <div className="flex items-center justify-between mb-3">
+                  <code className="text-lg text-white font-mono">{upiId}</code>
                   <button
-                    onClick={() => copyToClipboard(paymentSettings?.upiId || 'yourname@paytm')}
+                    onClick={() => copyToClipboard(upiId)}
                     className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 rounded transition-colors"
                   >
                     {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4 text-white" />}
                     <span className="ml-2 text-white text-sm">{copied ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
-                <p className="text-gray-500 text-sm mt-2">Name: STRK Tournaments</p>
+                <p className="text-gray-500 text-sm mb-3">Name: STRK Tournaments</p>
+                
+                {/* UPI Payment Link Buttons */}
+                <div className="space-y-3">
+                  {/* Main instruction box */}
+                  <div className="bg-red-900 p-4 rounded-lg border-2 border-red-500">
+                    <p className="text-white font-bold text-center text-lg">📝 PAYMENT INSTRUCTIONS</p>
+                    <ol className="text-white text-sm mt-3 space-y-2 list-decimal list-inside">
+                      <li>Click any button below to open your UPI app</li>
+                      <li className="font-black text-yellow-400">When asked, ENTER AMOUNT: ₹{amount}</li>
+                      <li>Complete payment and take screenshot</li>
+                      <li>Upload screenshot below</li>
+                    </ol>
+                  </div>
+
+                  <a
+                    href={upiPaymentUrl}
+                    className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-4 rounded-lg transition-all text-center"
+                  >
+                    💳 Open UPI App to Pay ₹{amount}
+                  </a>
+                  
+                  {/* Alternative buttons for different apps */}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <a
+                      href={`gpay://upi/pay?pa=${upiId}&pn=${merchantName}&tn=${transactionNote}`}
+                      className="text-center py-2 px-3 bg-gray-800 hover:bg-gray-700 rounded text-sm text-white"
+                    >
+                      Google Pay
+                    </a>
+                    <a
+                      href={`phonepe://pay?pa=${upiId}&pn=${merchantName}&tn=${transactionNote}`}
+                      className="text-center py-2 px-3 bg-gray-800 hover:bg-gray-700 rounded text-sm text-white"
+                    >
+                      PhonePe
+                    </a>
+                    <a
+                      href={`paytmmp://pay?pa=${upiId}&pn=${merchantName}&tn=${transactionNote}`}
+                      className="text-center py-2 px-3 bg-gray-800 hover:bg-gray-700 rounded text-sm text-white"
+                    >
+                      Paytm
+                    </a>
+                  </div>
+                  <p className="text-xs text-gray-400 text-center mt-2">↑ Choose your preferred UPI app</p>
+                </div>
               </div>
             </>
           ) : (
