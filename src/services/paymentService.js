@@ -245,6 +245,26 @@ export const deletePayment = (paymentId) => {
 }
 
 /**
+ * Delete payment by team ID (Admin function)
+ * @param {number} teamId - Team ID to find and delete payment
+ */
+export const deletePaymentByTeamId = (teamId) => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const filtered = payments.filter(p => p.teamId !== teamId)
+    localStorage.setItem('pendingPayments', JSON.stringify(filtered))
+    
+    return {
+      success: true,
+      message: 'Payment deleted successfully'
+    }
+  } catch (error) {
+    console.error('Error deleting payment by team ID:', error)
+    throw error
+  }
+}
+
+/**
  * Format currency for display
  */
 export const formatCurrency = (amount) => {
@@ -260,5 +280,6 @@ export default {
   getUserPaymentStatus,
   resetPayment,
   deletePayment,
+  deletePaymentByTeamId,
   formatCurrency
 }

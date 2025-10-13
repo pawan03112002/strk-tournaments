@@ -155,6 +155,17 @@ const useTournamentStore = create(
             registeredTeams: state.registeredTeams.filter((team) => team.teamId !== teamId)
           }))
           
+          // Delete associated payment record
+          try {
+            const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+            const filteredPayments = payments.filter(p => p.teamId !== teamId)
+            localStorage.setItem('pendingPayments', JSON.stringify(filteredPayments))
+            console.log('Associated payment deleted for team:', teamId)
+          } catch (paymentError) {
+            console.warn('Error deleting payment for team:', paymentError)
+            // Continue anyway - team deletion is more important
+          }
+          
           // Delete from Firebase if available
           if (db && team.firestoreId) {
             await deleteDoc(doc(db, 'teams', team.firestoreId))
@@ -224,6 +235,17 @@ const useTournamentStore = create(
           set((state) => ({
             registeredTeams: state.registeredTeams.filter((team) => !teamIds.includes(team.teamId))
           }))
+          
+          // Delete associated payment records
+          try {
+            const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+            const filteredPayments = payments.filter(p => !teamIds.includes(p.teamId))
+            localStorage.setItem('pendingPayments', JSON.stringify(filteredPayments))
+            console.log('Associated payments deleted for teams:', teamIds)
+          } catch (paymentError) {
+            console.warn('Error deleting payments for teams:', paymentError)
+            // Continue anyway - team deletion is more important
+          }
           
           // Delete from Firebase if available
           if (db) {
