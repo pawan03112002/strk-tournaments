@@ -1,20 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
 import CryptoJS from 'crypto-js'
 
-// Lazy Firebase db access to avoid initialization order issues
-const getDb = () => {
-  try {
-    // Access Firebase module only when needed, not at module load time
-    // This ensures Firebase has time to initialize before being accessed
-    const firebaseModule = require('../config/firebase')
-    return firebaseModule.db || null
-  } catch (error) {
-    console.error('Failed to access Firebase db:', error)
-    return null
-  }
-}
+// NO Firebase imports at module level to avoid initialization issues
+// Firebase will be imported dynamically inside async functions only
 
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
@@ -33,15 +22,24 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-// Helper functions to get Firebase document references (lazy initialization to avoid db access before init)
-const getAdminSettingsRef = () => {
-  const db = getDb()
-  return db ? doc(db, 'adminSettings', 'credentials') : null
-}
-
-const getWebsiteSettingsRef = () => {
-  const db = getDb()
-  return db ? doc(db, 'websiteSettings', 'config') : null
+// Helper to get Firebase - returns { db, doc, getDoc, setDoc } or null
+// This is called ONLY inside async functions, never at module init
+const getFirebase = async () => {
+  try {
+    const [firebaseConfig, firestore] = await Promise.all([
+      import('../config/firebase'),
+      import('firebase/firestore')
+    ])
+    return {
+      db: firebaseConfig.db,
+      doc: firestore.doc,
+      getDoc: firestore.getDoc,
+      setDoc: firestore.setDoc
+    }
+  } catch (error) {
+    console.error('Failed to load Firebase:', error)
+    return null
+  }
 }
 
 const useSettingsStore = create(
@@ -89,13 +87,14 @@ const useSettingsStore = create(
       // Load all settings from Firebase
       loadSettings: async () => {
         try {
-          const websiteSettingsRef = getWebsiteSettingsRef()
-          if (!websiteSettingsRef) {
+          const firebase = await getFirebase()
+          if (!firebase || !firebase.db) {
             console.warn('Firebase not configured, using local settings')
             return { success: false, message: 'Firebase not configured' }
           }
 
-          const docSnap = await getDoc(websiteSettingsRef)
+          const websiteSettingsRef = firebase.doc(firebase.db, 'websiteSettings', 'config')
+          const docSnap = await firebase.getDoc(websiteSettingsRef)
           if (docSnap.exists()) {
             const data = docSnap.data()
             console.log('✅ Settings loaded from Firebase:', data)
@@ -121,13 +120,14 @@ const useSettingsStore = create(
       // Save all settings to Firebase
       saveSettings: async () => {
         try {
-          const websiteSettingsRef = getWebsiteSettingsRef()
-          if (!websiteSettingsRef) {
+          const firebase = await getFirebase()
+          if (!firebase || !firebase.db) {
             return { success: false, message: 'Firebase not configured' }
           }
 
+          const websiteSettingsRef = firebase.doc(firebase.db, 'websiteSettings', 'config')
           const state = useSettingsStore.getState()
-          await setDoc(websiteSettingsRef, {
+          await firebase.setDoc(websiteSettingsRef, {
             socialMedia: state.socialMedia,
             support: state.support,
             tournamentSettings: state.tournamentSettings,
@@ -195,14 +195,15 @@ const useSettingsStore = create(
         try {
           set({ adminPassword: newPassword })
           
-          const adminSettingsRef = getAdminSettingsRef()
+          const firebase = await getFirebase()
           // Only save to Firebase if available
-          if (!adminSettingsRef) {
+          if (!firebase || !firebase.db) {
             return { success: true, message: 'Password changed locally (Firebase not configured)' }
           }
           
+          const adminSettingsRef = firebase.doc(firebase.db, 'adminSettings', 'credentials')
           const encrypted = encryptPassword(newPassword)
-          await setDoc(adminSettingsRef, {
+          await firebase.setDoc(adminSettingsRef, {
             encryptedPassword: encrypted,
             adminEmail: useSettingsStore.getState().adminEmail,
             lastModified: new Date().toISOString()
@@ -233,14 +234,15 @@ const useSettingsStore = create(
           if (email === state.adminEmail) {
             set({ adminPassword: newPassword })
             
-            const adminSettingsRef = getAdminSettingsRef()
+            const firebase = await getFirebase()
             // Only save to Firebase if available
-            if (!adminSettingsRef) {
+            if (!firebase || !firebase.db) {
               return { success: true, message: 'Password reset locally (Firebase not configured)' }
             }
             
+            const adminSettingsRef = firebase.doc(firebase.db, 'adminSettings', 'credentials')
             const encrypted = encryptPassword(newPassword)
-            await setDoc(adminSettingsRef, {
+            await firebase.setDoc(adminSettingsRef, {
               encryptedPassword: encrypted,
               adminEmail: state.adminEmail,
               lastModified: new Date().toISOString()
