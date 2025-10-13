@@ -23,7 +23,11 @@ const decryptPassword = (encryptedPassword) => {
 
 // Firebase settings document references (only if db is available)
 const adminSettingsRef = db ? doc(db, 'adminSettings', 'credentials') : null
-const websiteSettingsRef = db ? doc(db, 'websiteSettings', 'config') : null
+
+// Helper function to get websiteSettings reference
+const getWebsiteSettingsRef = () => {
+  return db ? doc(db, 'websiteSettings', 'config') : null
+}
 
 const useSettingsStore = create(
   persist(
@@ -70,6 +74,7 @@ const useSettingsStore = create(
       // Load all settings from Firebase
       loadSettings: async () => {
         try {
+          const websiteSettingsRef = getWebsiteSettingsRef()
           if (!websiteSettingsRef) {
             console.warn('Firebase not configured, using local settings')
             return { success: false, message: 'Firebase not configured' }
@@ -101,6 +106,7 @@ const useSettingsStore = create(
       // Save all settings to Firebase
       saveSettings: async () => {
         try {
+          const websiteSettingsRef = getWebsiteSettingsRef()
           if (!websiteSettingsRef) {
             return { success: false, message: 'Firebase not configured' }
           }
