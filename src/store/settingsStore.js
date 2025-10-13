@@ -2,8 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import CryptoJS from 'crypto-js'
 
-// NO Firebase imports at module level to avoid initialization issues
-// Firebase will be imported dynamically inside async functions only
+// ⚠️ CRITICAL: NO Firebase imports at module level
+// This file must initialize WITHOUT any Firebase dependency
 
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
@@ -22,24 +22,52 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-// Helper to get Firebase - returns { db, doc, getDoc, setDoc } or null
-// This is called ONLY inside async functions, never at module init
+// Cached Firebase module to avoid repeated imports
+let firebaseCache = null
+let firebaseLoadPromise = null
+
+// Ultra-safe Firebase loader with caching and error recovery
 const getFirebase = async () => {
-  try {
-    const [firebaseConfig, firestore] = await Promise.all([
-      import('../config/firebase'),
-      import('firebase/firestore')
-    ])
-    return {
-      db: firebaseConfig.db,
-      doc: firestore.doc,
-      getDoc: firestore.getDoc,
-      setDoc: firestore.setDoc
-    }
-  } catch (error) {
-    console.error('Failed to load Firebase:', error)
-    return null
+  // Return cached version if available
+  if (firebaseCache) {
+    return firebaseCache
   }
+  
+  // If already loading, return the same promise
+  if (firebaseLoadPromise) {
+    return firebaseLoadPromise
+  }
+  
+  // Start loading
+  firebaseLoadPromise = (async () => {
+    try {
+      // Wait a tiny bit to ensure Firebase has initialized
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const [firebaseConfig, firestore] = await Promise.all([
+        import('../config/firebase'),
+        import('firebase/firestore')
+      ])
+      
+      const result = {
+        db: firebaseConfig.db,
+        doc: firestore.doc,
+        getDoc: firestore.getDoc,
+        setDoc: firestore.setDoc
+      }
+      
+      // Cache it
+      firebaseCache = result
+      return result
+    } catch (error) {
+      console.error('Firebase load failed:', error)
+      // Reset promise so it can retry next time
+      firebaseLoadPromise = null
+      return null
+    }
+  })()
+  
+  return firebaseLoadPromise
 }
 
 const useSettingsStore = create(
