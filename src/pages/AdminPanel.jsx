@@ -1031,9 +1031,9 @@ const AdminPanel = () => {
               >
                 <CreditCard className="w-5 h-5 inline mr-2" />
                 Payment Verification
-                {getAllPayments().filter(p => p.status === 'pending').length > 0 && (
+                {payments.filter(p => p.status === 'pending').length > 0 && (
                   <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-black text-xs rounded-full font-bold">
-                    {getAllPayments().filter(p => p.status === 'pending').length}
+                    {payments.filter(p => p.status === 'pending').length}
                   </span>
                 )}
                 {activeTab === 'payments' && (
@@ -1522,25 +1522,25 @@ const AdminPanel = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-yellow-500 mb-2">
-                    {getAllPayments().filter(p => p.status === 'pending').length}
+                    {payments.filter(p => p.status === 'pending').length}
                   </div>
                   <p className="text-gray-400 text-sm">Pending Verification</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-green-500 mb-2">
-                    {getAllPayments().filter(p => p.status === 'verified').length}
+                    {payments.filter(p => p.status === 'verified').length}
                   </div>
                   <p className="text-gray-400 text-sm">Verified</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-red-500 mb-2">
-                    {getAllPayments().filter(p => p.status === 'rejected').length}
+                    {payments.filter(p => p.status === 'rejected').length}
                   </div>
                   <p className="text-gray-400 text-sm">Rejected</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-blue-500 mb-2">
-                    {getAllPayments().length}
+                    {payments.length}
                   </div>
                   <p className="text-gray-400 text-sm">Total Payments</p>
                 </div>
@@ -1561,10 +1561,10 @@ const AdminPanel = () => {
                 
                 <div className="flex gap-2 flex-wrap">
                   {[
-                    { value: 'pending', label: 'Pending', count: getAllPayments().filter(p => p.status === 'pending').length },
-                    { value: 'verified', label: 'Verified', count: getAllPayments().filter(p => p.status === 'verified').length },
-                    { value: 'rejected', label: 'Rejected', count: getAllPayments().filter(p => p.status === 'rejected').length },
-                    { value: 'all', label: 'All', count: getAllPayments().length }
+                    { value: 'pending', label: 'Pending', count: payments.filter(p => p.status === 'pending').length },
+                    { value: 'verified', label: 'Verified', count: payments.filter(p => p.status === 'verified').length },
+                    { value: 'rejected', label: 'Rejected', count: payments.filter(p => p.status === 'rejected').length },
+                    { value: 'all', label: 'All', count: payments.length }
                   ].map((f) => (
                     <button
                       key={f.value}
