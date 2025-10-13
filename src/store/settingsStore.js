@@ -1,8 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { db } from '../config/firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import CryptoJS from 'crypto-js'
+
+// Lazy Firebase db access to avoid initialization order issues
+const getDb = () => {
+  try {
+    // Access Firebase module only when needed, not at module load time
+    // This ensures Firebase has time to initialize before being accessed
+    const firebaseModule = require('../config/firebase')
+    return firebaseModule.db || null
+  } catch (error) {
+    console.error('Failed to access Firebase db:', error)
+    return null
+  }
+}
 
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
@@ -23,10 +35,12 @@ const decryptPassword = (encryptedPassword) => {
 
 // Helper functions to get Firebase document references (lazy initialization to avoid db access before init)
 const getAdminSettingsRef = () => {
+  const db = getDb()
   return db ? doc(db, 'adminSettings', 'credentials') : null
 }
 
 const getWebsiteSettingsRef = () => {
+  const db = getDb()
   return db ? doc(db, 'websiteSettings', 'config') : null
 }
 
