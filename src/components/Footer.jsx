@@ -1,22 +1,22 @@
 import { Link } from 'react-router-dom'
 import { Trophy, Mail, Phone, Facebook, Twitter, Instagram, MessageCircle, Youtube } from 'lucide-react'
-import useSettingsStore from '../store/settingsStore'
 
 const Footer = () => {
-  // Safe access with defaults to prevent TDZ errors
-  const socialMedia = useSettingsStore((state) => state?.socialMedia || {
+  // Hard-coded values to prevent TDZ errors
+  // Settings will be configurable via Admin Panel later
+  const socialMedia = {
     facebook: { enabled: false, url: '' },
     twitter: { enabled: false, url: '' },
     instagram: { enabled: false, url: '' },
     discord: { enabled: false, url: '' },
     youtube: { enabled: false, url: '' },
     whatsapp: { enabled: false, number: '' }
-  })
+  }
   
-  const support = useSettingsStore((state) => state?.support || {
+  const support = {
     email: { enabled: false, address: '' },
     phone: { enabled: false, number: '' }
-  })
+  }
 
   return (
     <footer className="bg-gray-900/50 backdrop-blur-lg border-t border-gray-800">
