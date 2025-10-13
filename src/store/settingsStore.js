@@ -79,10 +79,10 @@ try {
             const data = docSnap.data()
             console.log('✅ Settings loaded from Firebase:', data)
             set({
-              socialMedia: data.socialMedia || useSettingsStore.getState().socialMedia,
-              support: data.support || useSettingsStore.getState().support,
-              tournamentSettings: data.tournamentSettings || useSettingsStore.getState().tournamentSettings,
-              paymentSettings: data.paymentSettings || useSettingsStore.getState().paymentSettings
+              socialMedia: data.socialMedia || get().socialMedia,
+              support: data.support || get().support,
+              tournamentSettings: data.tournamentSettings || get().tournamentSettings,
+              paymentSettings: data.paymentSettings || get().paymentSettings
             })
             return { success: true, message: 'Settings loaded from Firebase' }
           } else {
@@ -105,7 +105,7 @@ try {
           }
 
           const websiteSettingsRef = doc(db, 'websiteSettings', 'config')
-          const state = useSettingsStore.getState()
+          const state = get()
           await setDoc(websiteSettingsRef, {
             socialMedia: state.socialMedia,
             support: state.support,
@@ -130,7 +130,7 @@ try {
           }
         }))
         // Save to Firebase
-        return await useSettingsStore.getState().saveSettings()
+        return await get().saveSettings()
       },
 
       // Update support contact
@@ -142,7 +142,7 @@ try {
           }
         }))
         // Save to Firebase
-        return await useSettingsStore.getState().saveSettings()
+        return await get().saveSettings()
       },
 
       // Load admin credentials - using default password (no Firebase dependency)
@@ -183,7 +183,7 @@ try {
           const encrypted = encryptPassword(newPassword)
           await setDoc(adminSettingsRef, {
             encryptedPassword: encrypted,
-            adminEmail: useSettingsStore.getState().adminEmail,
+            adminEmail: get().adminEmail,
             lastModified: new Date().toISOString()
           }, { merge: true })
           
@@ -202,13 +202,13 @@ try {
 
       // Verify admin password
       verifyAdminPassword: (password) => {
-        return password === useSettingsStore.getState().adminPassword
+        return password === get().adminPassword
       },
 
       // Reset admin password (forgot password) - now saves to Firebase
       resetAdminPassword: async (email, newPassword) => {
         try {
-          const state = useSettingsStore.getState()
+          const state = get()
           if (email === state.adminEmail) {
             set({ adminPassword: newPassword })
             
@@ -243,7 +243,7 @@ try {
           }
         }))
         // Save to Firebase
-        return await useSettingsStore.getState().saveSettings()
+        return await get().saveSettings()
       },
 
       // Update payment settings
@@ -255,17 +255,16 @@ try {
           }
         }))
         // Save to Firebase
-        return await useSettingsStore.getState().saveSettings()
+        return await get().saveSettings()
       }
     }))
   
-  console.log('✅ settingsStore created successfully')
 } catch (error) {
   console.error('❌ CRITICAL ERROR creating settingsStore:', error)
   console.error('Error stack:', error.stack)
   
   // Create a fallback store with no-op functions
-  useSettingsStore = create((set) => ({
+  const useSettingsStore = create((set, get) => ({
     socialMedia: { facebook: { enabled: false }, twitter: { enabled: false }, instagram: { enabled: false }, discord: { enabled: false }, youtube: { enabled: false }, whatsapp: { enabled: false } },
     support: { email: { enabled: false }, phone: { enabled: false } },
     tournamentSettings: { registrationFee: 500, maxTeams: 100, currency: 'INR' },
