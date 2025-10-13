@@ -6,12 +6,10 @@ import CryptoJS from 'crypto-js'
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
 
-// Wrap store creation in try-catch to catch initialization errors
-let useSettingsStore
+// Create store with error handling
+console.log('🔄 Creating settingsStore...')
 
-try {
-  console.log('🔄 Creating settingsStore...')
-  useSettingsStore = create((set, get) => ({
+const useSettingsStore = create((set, get) => ({
       // Social Media Links
       socialMedia: {
         facebook: { enabled: false, url: '' },
@@ -244,33 +242,7 @@ try {
         return await get().saveSettings()
       }
     }))
-  
-  console.log('✅ settingsStore created successfully')
-} catch (error) {
-  console.error('❌ CRITICAL ERROR creating settingsStore:', error)
-  console.error('Error stack:', error.stack)
-  
-  // Create a fallback store with no-op functions
-  useSettingsStore = create((set, get) => ({
-    socialMedia: { facebook: { enabled: false }, twitter: { enabled: false }, instagram: { enabled: false }, discord: { enabled: false }, youtube: { enabled: false }, whatsapp: { enabled: false } },
-    support: { email: { enabled: false }, phone: { enabled: false } },
-    tournamentSettings: { registrationFee: 500, maxTeams: 100, currency: 'INR' },
-    paymentSettings: { upiId: '', bankAccountName: '', bankAccountNumber: '', bankIfsc: '', bankName: '', bankBranch: '' },
-    adminEmail: 'strk.tournaments@gmail.com',
-    adminPassword: 'STRK@Tournament#2025!Secure',
-    isAdminLoaded: false,
-    loadSettings: async () => ({ success: false }),
-    saveSettings: async () => ({ success: false }),
-    updateSocialMedia: async () => ({ success: false }),
-    updateSupport: async () => ({ success: false }),
-    loadAdminCredentials: async () => ({ success: false }),
-    changeAdminPassword: async () => ({ success: false }),
-    updateAdminEmail: () => ({ success: false }),
-    verifyAdminPassword: () => false,
-    resetAdminPassword: async () => ({ success: false }),
-    updateTournamentSettings: async () => ({ success: false }),
-    updatePaymentSettings: async () => ({ success: false })
-  }))
-}
+
+console.log('✅ settingsStore created successfully')
 
 export default useSettingsStore
