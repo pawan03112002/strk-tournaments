@@ -78,6 +78,7 @@ const useSettingsStore = create(
           const docSnap = await getDoc(websiteSettingsRef)
           if (docSnap.exists()) {
             const data = docSnap.data()
+            console.log('✅ Settings loaded from Firebase:', data)
             set({
               socialMedia: data.socialMedia || useSettingsStore.getState().socialMedia,
               support: data.support || useSettingsStore.getState().support,
@@ -86,16 +87,10 @@ const useSettingsStore = create(
             })
             return { success: true, message: 'Settings loaded from Firebase' }
           } else {
-            // Create initial settings document
-            const initialSettings = {
-              socialMedia: useSettingsStore.getState().socialMedia,
-              support: useSettingsStore.getState().support,
-              tournamentSettings: useSettingsStore.getState().tournamentSettings,
-              paymentSettings: useSettingsStore.getState().paymentSettings,
-              lastModified: new Date().toISOString()
-            }
-            await setDoc(websiteSettingsRef, initialSettings)
-            return { success: true, message: 'Initial settings created in Firebase' }
+            // Document doesn't exist yet - keep default values, don't create document
+            // Admin needs to click "Save Settings" to create it
+            console.warn('⚠️ No settings found in Firebase - using defaults. Admin needs to configure and save settings.')
+            return { success: false, message: 'No settings configured yet - using defaults' }
           }
         } catch (error) {
           console.error('Error loading settings:', error)

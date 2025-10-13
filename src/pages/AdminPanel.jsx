@@ -62,6 +62,22 @@ const AdminPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Update settingsForm when store values change (after loading from Firebase)
+  useEffect(() => {
+    setSettingsForm({
+      facebook: socialMedia?.facebook || { enabled: false, url: '' },
+      twitter: socialMedia?.twitter || { enabled: false, url: '' },
+      instagram: socialMedia?.instagram || { enabled: false, url: '' },
+      discord: socialMedia?.discord || { enabled: false, url: '' },
+      youtube: socialMedia?.youtube || { enabled: false, url: '' },
+      whatsapp: socialMedia?.whatsapp || { enabled: false, number: '' },
+      supportEmail: support?.email || { enabled: false, address: '' },
+      supportPhone: support?.phone || { enabled: false, number: '' },
+      tournamentSettings: tournamentSettings,
+      paymentSettings: paymentSettings
+    })
+  }, [socialMedia, support, tournamentSettings, paymentSettings])
+
   const loadPayments = async () => {
     try {
       const fetchedPayments = await getAllPayments()
