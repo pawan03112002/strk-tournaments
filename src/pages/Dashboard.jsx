@@ -105,7 +105,7 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {userPayment && userPayment.status === 'verified' && myTeam && (
+        {userPayment && userPayment.status === 'verified' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -119,7 +119,11 @@ const Dashboard = () => {
                 <p className="text-gray-300 text-sm mt-1">
                   Congratulations! Your team is officially registered.
                 </p>
-                <p className="text-white text-xl font-black mt-2">Your Team Number: #{myTeam.teamNumber}</p>
+                {(userPayment.teamNumber || myTeam?.teamNumber) && (
+                  <p className="text-white text-xl font-black mt-2">
+                    Your Team Number: #{userPayment.teamNumber || myTeam.teamNumber}
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>

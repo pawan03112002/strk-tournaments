@@ -30,7 +30,8 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('teams') // teams, payments, settings, security
   
   // Payment verification states
-  const [payments, setPayments] = useState([])
+  const [allPayments, setAllPayments] = useState([]) // Store all payments for counting
+  const [payments, setPayments] = useState([]) // Store filtered payments for display
   const [paymentFilter, setPaymentFilter] = useState('pending')
   const [selectedPayment, setSelectedPayment] = useState(null)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -60,28 +61,34 @@ const AdminPanel = () => {
 
   const loadPayments = async () => {
     try {
-      const allPayments = await getAllPayments()
+      const fetchedPayments = await getAllPayments()
       
-      // Ensure allPayments is an array
-      if (!Array.isArray(allPayments)) {
-        console.warn('getAllPayments did not return an array:', allPayments)
+      // Ensure fetchedPayments is an array
+      if (!Array.isArray(fetchedPayments)) {
+        console.warn('getAllPayments did not return an array:', fetchedPayments)
+        setAllPayments([])
         setPayments([])
         return
       }
       
-      let filtered = allPayments
+      // Store all payments for counting
+      setAllPayments(fetchedPayments)
+      
+      // Filter for display
+      let filtered = fetchedPayments
       if (paymentFilter === 'pending') {
-        filtered = allPayments.filter(p => p.status === 'pending')
+        filtered = fetchedPayments.filter(p => p.status === 'pending')
       } else if (paymentFilter === 'verified') {
-        filtered = allPayments.filter(p => p.status === 'verified')
+        filtered = fetchedPayments.filter(p => p.status === 'verified')
       } else if (paymentFilter === 'rejected') {
-        filtered = allPayments.filter(p => p.status === 'rejected')
+        filtered = fetchedPayments.filter(p => p.status === 'rejected')
       }
       
       setPayments(filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
     } catch (error) {
       console.error('Error loading payments:', error)
       toast.error('Failed to load payments from Firebase')
+      setAllPayments([])
       setPayments([]) // Set empty array on error
     }
   }
@@ -960,9 +967,9 @@ const AdminPanel = () => {
               >
                 <CreditCard className="w-5 h-5 inline mr-2" />
                 Payment Verification
-                {payments.filter(p => p.status === 'pending').length > 0 && (
+                {allPayments.filter(p => p.status === 'pending').length > 0 && (
                   <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-black text-xs rounded-full font-bold">
-                    {payments.filter(p => p.status === 'pending').length}
+                    {allPayments.filter(p => p.status === 'pending').length}
                   </span>
                 )}
                 {activeTab === 'payments' && (
@@ -1451,25 +1458,25 @@ const AdminPanel = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-yellow-500 mb-2">
-                    {payments.filter(p => p.status === 'pending').length}
+                    {allPayments.filter(p => p.status === 'pending').length}
                   </div>
                   <p className="text-gray-400 text-sm">Pending Verification</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-green-500 mb-2">
-                    {payments.filter(p => p.status === 'verified').length}
+                    {allPayments.filter(p => p.status === 'verified').length}
                   </div>
                   <p className="text-gray-400 text-sm">Verified</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-red-500 mb-2">
-                    {payments.filter(p => p.status === 'rejected').length}
+                    {allPayments.filter(p => p.status === 'rejected').length}
                   </div>
                   <p className="text-gray-400 text-sm">Rejected</p>
                 </div>
                 <div className="card text-center">
                   <div className="text-3xl font-bold text-blue-500 mb-2">
-                    {payments.length}
+                    {allPayments.length}
                   </div>
                   <p className="text-gray-400 text-sm">Total Payments</p>
                 </div>
@@ -1490,10 +1497,10 @@ const AdminPanel = () => {
                 
                 <div className="flex gap-2 flex-wrap">
                   {[
-                    { value: 'pending', label: 'Pending', count: payments.filter(p => p.status === 'pending').length },
-                    { value: 'verified', label: 'Verified', count: payments.filter(p => p.status === 'verified').length },
-                    { value: 'rejected', label: 'Rejected', count: payments.filter(p => p.status === 'rejected').length },
-                    { value: 'all', label: 'All', count: payments.length }
+                    { value: 'pending', label: 'Pending', count: allPayments.filter(p => p.status === 'pending').length },
+                    { value: 'verified', label: 'Verified', count: allPayments.filter(p => p.status === 'verified').length },
+                    { value: 'rejected', label: 'Rejected', count: allPayments.filter(p => p.status === 'rejected').length },
+                    { value: 'all', label: 'All', count: allPayments.length }
                   ].map((f) => (
                     <button
                       key={f.value}
