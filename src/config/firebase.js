@@ -13,6 +13,13 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abc123"
 }
 
+// Debug: Log config (REMOVE IN PRODUCTION)
+console.log('🔧 Firebase Config:', {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  hasApiKey: !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'AIzaSyDummy_Key_Replace_This'
+})
+
 // Initialize Firebase
 let app = null
 let auth = null

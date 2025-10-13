@@ -1,0 +1,51 @@
+
+# 🔥 FIRESTORE SECURITY RULES
+# Copy and paste this into Firebase Console → Firestore → Rules tab
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.uid in get(/databases/$(database)/documents/adminSettings/admins).data.adminUIDs;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if true;  // Anyone can read user profiles
+      allow create: if request.auth != null;  // Authenticated users can create
+      allow update, delete: if request.auth != null && request.auth.uid == userId;  // Users can only update their own
+    }
+    
+    // Teams collection
+    match /teams/{teamId} {
+      allow read: if true;  // Anyone can view teams
+      allow write: if request.auth != null;  // Any authenticated user can write (admin check done in code)
+    }
+    
+    // Payments collection
+    match /payments/{paymentId} {
+      allow read: if request.auth != null;  // Any authenticated user can read (admin check in code)
+      allow create: if true;  // Anyone can submit payment
+      allow update, delete: if request.auth != null;  // Any authenticated user can modify (admin check in code)
+    }
+    
+    // Admin settings - admins document (list of admin UIDs)
+    match /adminSettings/admins {
+      allow read: if request.auth != null;  // Any authenticated user can check if they're admin
+      allow write: if false;  // Never allow writes from client (manual only)
+    }
+    
+    // Admin settings - other documents
+    match /adminSettings/{doc} {
+      allow read: if request.auth != null;  // Any authenticated user can read
+      allow write: if request.auth != null;  // Any authenticated user can write (will be admin)
+    }
+  }
+}
+
+# ✅ COPY THE RULES ABOVE (from rules_version to the last closing brace)
+# ✅ Go to Firebase Console → Firestore Database → Rules tab
+# ✅ Paste and click "Publish"
