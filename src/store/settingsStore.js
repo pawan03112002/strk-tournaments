@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { db } from '../config/firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import CryptoJS from 'crypto-js'
@@ -21,9 +20,7 @@ const decryptPassword = (encryptedPassword) => {
   }
 }
 
-const useSettingsStore = create(
-  persist(
-    (set) => ({
+const useSettingsStore = create((set) => ({
       // Social Media Links
       socialMedia: {
         facebook: { enabled: false, url: '' },
@@ -255,17 +252,6 @@ const useSettingsStore = create(
         // Save to Firebase
         return await useSettingsStore.getState().saveSettings()
       }
-    }),
-    {
-      name: 'settings-storage',
-      partialize: (state) => ({
-        // Only persist adminEmail locally, all other settings come from Firebase
-        adminEmail: state.adminEmail,
-        // adminPassword is NOT persisted to localStorage, only loaded from Firebase
-        // socialMedia, support, tournamentSettings, paymentSettings are loaded from Firebase
-      })
-    }
-  )
-)
+    }))
 
 export default useSettingsStore
