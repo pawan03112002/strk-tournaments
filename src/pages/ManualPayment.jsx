@@ -92,7 +92,8 @@ export default function ManualPayment() {
         amount: amount,
         paymentProof: paymentProof,
         upiId: selectedMethod === paymentMethods.UPI ? upiConfig.upiId : null,
-        payerName: payerName.trim()
+        payerName: payerName.trim(),
+        registrationData: registrationData // Pass full registration data
       }
 
       const result = await submitManualPayment(paymentData)

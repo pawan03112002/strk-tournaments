@@ -77,15 +77,23 @@ const AdminPanel = () => {
   }
 
   const handleVerifyPayment = async (paymentId) => {
-    if (!confirm('Verify this payment?')) return
+    if (!confirm('Verify this payment? This will create a team entry.')) return
 
     setPaymentLoading(true)
     try {
-      await verifyPayment(paymentId)
-      toast.success('Payment verified successfully!')
+      const result = await verifyPayment(paymentId)
+      if (result.teamNumber) {
+        toast.success(`Payment verified! Team created: ${result.teamNumber}`)
+      } else {
+        toast.success('Payment verified successfully!')
+      }
       loadPayments()
       setSelectedPayment(null)
+      
+      // Force reload teams from localStorage to show new team
+      window.location.reload() // Reload to show new team in management
     } catch (error) {
+      console.error('Verification error:', error)
       toast.error('Failed to verify payment')
     } finally {
       setPaymentLoading(false)
@@ -554,13 +562,19 @@ const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
+    
+    // Ensure admin credentials are loaded
+    if (!isAdminLoaded) {
+      await loadAdminCredentials()
+    }
+    
     if (verifyAdminPassword(password)) {
       setIsAuthenticated(true)
       toast.success('Login successful!')
     } else {
-      toast.error('Invalid password!')
+      toast.error('Invalid password! Use: STRK@Tournament#2025!Secure')
     }
   }
 
@@ -1485,7 +1499,42 @@ const AdminPanel = () => {
                             {selectedPayment.status}
                           </span>
                         </div>
+                        {selectedPayment.teamNumber && (
+                          <div>
+                            <label className="text-gray-400 text-sm">Assigned Team Number</label>
+                            <p className="text-blue-400 font-bold text-xl">{selectedPayment.teamNumber}</p>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Team Registration Info */}
+                      {selectedPayment.registrationData && (
+                        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <h3 className="text-blue-400 font-bold mb-3">Team Information</h3>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Players:</span>
+                              <div className="mt-1 space-y-1">
+                                {['player1Username', 'player2Username', 'player3Username', 'player4Username'].map((key, index) => 
+                                  selectedPayment.registrationData[key] && (
+                                    <div key={key} className="text-white pl-2">
+                                      {index + 1}. {selectedPayment.registrationData[key]}
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                            {selectedPayment.registrationData.phoneNumber && (
+                              <div>
+                                <span className="text-gray-400">Contact: </span>
+                                <span className="text-white">
+                                  {selectedPayment.registrationData.countryCode || ''} {selectedPayment.registrationData.phoneNumber}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Screenshot */}
                       <div className="mb-6">

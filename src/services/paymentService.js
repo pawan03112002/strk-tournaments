@@ -15,7 +15,8 @@ export const submitManualPayment = async (paymentData) => {
       amount,
       paymentProof, // base64 image or file
       upiId,
-      payerName
+      payerName,
+      registrationData // Full registration form data
     } = paymentData
 
     // In a real app, this would save to Firebase/database
@@ -31,6 +32,7 @@ export const submitManualPayment = async (paymentData) => {
       paymentProof,
       upiId,
       payerName,
+      registrationData, // Store full registration data for team creation
       status: 'pending',
       submittedAt: new Date().toISOString(),
       verifiedAt: null
@@ -82,8 +84,9 @@ export const getAllPayments = () => {
 /**
  * Verify payment (Admin function)
  * @param {string} paymentId - Payment ID to verify
+ * @param {object} teamData - Team registration data from payment
  */
-export const verifyPayment = (paymentId) => {
+export const verifyPayment = (paymentId, teamData = null) => {
   try {
     const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
     const paymentIndex = payments.findIndex(p => p.id === paymentId)
@@ -92,10 +95,56 @@ export const verifyPayment = (paymentId) => {
       throw new Error('Payment not found')
     }
 
+    const payment = payments[paymentIndex]
+    
+    // Mark payment as verified
     payments[paymentIndex].status = 'verified'
     payments[paymentIndex].verifiedAt = new Date().toISOString()
     
     localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    
+    // Create team in tournament store if teamData provided or extract from payment
+    const registrationData = teamData || payment.registrationData
+    if (registrationData) {
+      // Get existing teams to generate team number
+      const teams = JSON.parse(localStorage.getItem('tournament_teams') || '[]')
+      const teamNumber = `Team ${teams.length + 1}`
+      const teamId = `TEAM_${Date.now()}`
+      
+      const newTeam = {
+        id: teamId,
+        teamName: registrationData.teamName,
+        teamNumber: teamNumber,
+        players: [
+          registrationData.player1Username,
+          registrationData.player2Username,
+          registrationData.player3Username,
+          registrationData.player4Username
+        ].filter(p => p), // Remove empty players
+        contactEmail: registrationData.contactEmail || payment.contactEmail,
+        contactNumber: `${registrationData.countryCode || '+91'}${registrationData.phoneNumber || payment.contactNumber}`,
+        teamLogo: registrationData.teamLogo || null,
+        registeredAt: new Date().toISOString(),
+        paymentStatus: 'completed',
+        stage: 'enrolled', // Initial stage
+        paymentId: paymentId
+      }
+      
+      teams.push(newTeam)
+      localStorage.setItem('tournament_teams', JSON.stringify(teams))
+      
+      // Store team number in payment record
+      payments[paymentIndex].teamNumber = teamNumber
+      payments[paymentIndex].teamId = teamId
+      localStorage.setItem('pendingPayments', JSON.stringify(payments))
+      
+      return {
+        success: true,
+        message: 'Payment verified and team created successfully',
+        teamNumber: teamNumber,
+        teamId: teamId
+      }
+    }
     
     return {
       success: true,

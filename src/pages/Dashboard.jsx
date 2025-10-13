@@ -29,6 +29,12 @@ const Dashboard = () => {
       setUserPayment(payment)
     }
   }, [user, registeredTeams]) // Re-check when teams update
+  
+  // Log for debugging
+  useEffect(() => {
+    console.log('User Payment:', userPayment)
+    console.log('My Team:', myTeam)
+  }, [userPayment, myTeam])
 
   if (!user) {
     navigate('/login')
