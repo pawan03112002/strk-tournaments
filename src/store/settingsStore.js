@@ -1,29 +1,7 @@
 import { create } from 'zustand'
+import { db } from '../config/firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import CryptoJS from 'crypto-js'
-
-// Import Firebase lazily to avoid TDZ errors
-// These will be loaded when functions are actually called
-let db, doc, getDoc, setDoc
-
-// Load Firebase modules on first access
-const ensureFirebase = async () => {
-  if (db) return true
-  
-  try {
-    const firebaseModule = await import('../config/firebase')
-    const firestoreModule = await import('firebase/firestore')
-    
-    db = firebaseModule.db
-    doc = firestoreModule.doc
-    getDoc = firestoreModule.getDoc
-    setDoc = firestoreModule.setDoc
-    
-    return true
-  } catch (error) {
-    console.error('Failed to load Firebase:', error)
-    return false
-  }
-}
 
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
@@ -90,8 +68,7 @@ try {
       // Load all settings from Firebase
       loadSettings: async () => {
         try {
-          const ready = await ensureFirebase()
-          if (!ready || !db) {
+          if (!db) {
             console.warn('Firebase not configured, using local settings')
             return { success: false, message: 'Firebase not configured' }
           }
@@ -123,8 +100,7 @@ try {
       // Save all settings to Firebase
       saveSettings: async () => {
         try {
-          const ready = await ensureFirebase()
-          if (!ready || !db) {
+          if (!db) {
             return { success: false, message: 'Firebase not configured' }
           }
 
@@ -198,9 +174,8 @@ try {
         try {
           set({ adminPassword: newPassword })
           
-          const ready = await ensureFirebase()
           // Only save to Firebase if available
-          if (!ready || !db) {
+          if (!db) {
             return { success: true, message: 'Password changed locally (Firebase not configured)' }
           }
           
@@ -237,9 +212,8 @@ try {
           if (email === state.adminEmail) {
             set({ adminPassword: newPassword })
             
-            const ready = await ensureFirebase()
             // Only save to Firebase if available
-            if (!ready || !db) {
+            if (!db) {
               return { success: true, message: 'Password reset locally (Firebase not configured)' }
             }
             
