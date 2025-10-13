@@ -66,7 +66,7 @@ const useTournamentStore = create(
           teamId++
         }
         
-        const teamNumber = teamId.toString().padStart(4, '0')
+        const teamNumber = teamId.toString().padStart(5, '0')
         
         const newTeam = {
           ...teamData,
