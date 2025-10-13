@@ -86,51 +86,24 @@ const useSettingsStore = create(
         }))
       },
 
-      // Load admin credentials from Firebase
+      // Load admin credentials - using default password (no Firebase dependency)
       loadAdminCredentials: async () => {
         try {
-          // If Firebase is not available, use default password from localStorage
-          if (!adminSettingsRef) {
-            const defaultPassword = 'STRK@Tournament#2025!Secure'
-            set({ 
-              adminPassword: defaultPassword,
-              isAdminLoaded: true 
-            })
-            return { success: true, message: 'Using default password (Firebase not configured)' }
-          }
-          
-          const docSnap = await getDoc(adminSettingsRef)
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            const decrypted = decryptPassword(data.encryptedPassword)
-            set({ 
-              adminPassword: decrypted,
-              adminEmail: data.adminEmail || 'strk.tournaments@gmail.com',
-              isAdminLoaded: true 
-            })
-            return { success: true }
-          } else {
-            // Initialize with default password on first load
-            const defaultPassword = 'STRK@Tournament#2025!Secure'
-            const encrypted = encryptPassword(defaultPassword)
-            await setDoc(adminSettingsRef, {
-              encryptedPassword: encrypted,
-              adminEmail: 'strk.tournaments@gmail.com',
-              createdAt: new Date().toISOString(),
-              lastModified: new Date().toISOString()
-            })
-            set({ 
-              adminPassword: defaultPassword,
-              isAdminLoaded: true 
-            })
-            return { success: true, message: 'Initialized with default password' }
-          }
+          // Use default password - no Firestore access needed
+          const defaultPassword = 'STRK@Tournament#2025!Secure'
+          set({ 
+            adminPassword: defaultPassword,
+            adminEmail: 'strk.tournaments@gmail.com',
+            isAdminLoaded: true 
+          })
+          return { success: true, message: 'Admin credentials loaded' }
         } catch (error) {
           console.error('Error loading admin credentials:', error)
           // Fallback to default password
           const defaultPassword = 'STRK@Tournament#2025!Secure'
           set({ 
             adminPassword: defaultPassword,
+            adminEmail: 'strk.tournaments@gmail.com',
             isAdminLoaded: true 
           })
           return { success: false, error: error.message }
