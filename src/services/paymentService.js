@@ -84,9 +84,9 @@ export const getAllPayments = () => {
 /**
  * Verify payment (Admin function)
  * @param {string} paymentId - Payment ID to verify
- * @param {object} teamData - Team registration data from payment
+ * @param {function} registerTeamCallback - Callback to register team in tournament store
  */
-export const verifyPayment = (paymentId, teamData = null) => {
+export const verifyPayment = async (paymentId, registerTeamCallback = null) => {
   try {
     const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
     const paymentIndex = payments.findIndex(p => p.id === paymentId)
@@ -101,48 +101,41 @@ export const verifyPayment = (paymentId, teamData = null) => {
     payments[paymentIndex].status = 'verified'
     payments[paymentIndex].verifiedAt = new Date().toISOString()
     
-    localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    // Create team using the tournament store if registration data exists
+    const registrationData = payment.registrationData
+    let createdTeam = null
     
-    // Create team in tournament store if teamData provided or extract from payment
-    const registrationData = teamData || payment.registrationData
-    if (registrationData) {
-      // Get existing teams to generate team number
-      const teams = JSON.parse(localStorage.getItem('tournament_teams') || '[]')
-      const teamNumber = `Team ${teams.length + 1}`
-      const teamId = `TEAM_${Date.now()}`
-      
-      const newTeam = {
-        id: teamId,
+    if (registrationData && registerTeamCallback) {
+      const teamData = {
         teamName: registrationData.teamName,
-        teamNumber: teamNumber,
         players: [
           registrationData.player1Username,
           registrationData.player2Username,
           registrationData.player3Username,
           registrationData.player4Username
-        ].filter(p => p), // Remove empty players
+        ].filter(p => p && p.trim()), // Remove empty players
         contactEmail: registrationData.contactEmail || payment.contactEmail,
         contactNumber: `${registrationData.countryCode || '+91'}${registrationData.phoneNumber || payment.contactNumber}`,
         teamLogo: registrationData.teamLogo || null,
-        registeredAt: new Date().toISOString(),
-        paymentStatus: 'completed',
-        stage: 'enrolled', // Initial stage
         paymentId: paymentId
       }
       
-      teams.push(newTeam)
-      localStorage.setItem('tournament_teams', JSON.stringify(teams))
+      // Register team using tournament store
+      createdTeam = await registerTeamCallback(teamData)
       
-      // Store team number in payment record
-      payments[paymentIndex].teamNumber = teamNumber
-      payments[paymentIndex].teamId = teamId
-      localStorage.setItem('pendingPayments', JSON.stringify(payments))
-      
+      // Store team info in payment record
+      payments[paymentIndex].teamNumber = createdTeam.teamNumber
+      payments[paymentIndex].teamId = createdTeam.teamId
+    }
+    
+    localStorage.setItem('pendingPayments', JSON.stringify(payments))
+    
+    if (createdTeam) {
       return {
         success: true,
         message: 'Payment verified and team created successfully',
-        teamNumber: teamNumber,
-        teamId: teamId
+        teamNumber: createdTeam.teamNumber,
+        teamId: createdTeam.teamId
       }
     }
     
@@ -232,6 +225,26 @@ export const resetPayment = (paymentId) => {
 }
 
 /**
+ * Delete payment entry (Admin function)
+ * @param {string} paymentId - Payment ID to delete
+ */
+export const deletePayment = (paymentId) => {
+  try {
+    const payments = JSON.parse(localStorage.getItem('pendingPayments') || '[]')
+    const filtered = payments.filter(p => p.id !== paymentId)
+    localStorage.setItem('pendingPayments', JSON.stringify(filtered))
+    
+    return {
+      success: true,
+      message: 'Payment deleted successfully'
+    }
+  } catch (error) {
+    console.error('Error deleting payment:', error)
+    throw error
+  }
+}
+
+/**
  * Format currency for display
  */
 export const formatCurrency = (amount) => {
@@ -246,5 +259,6 @@ export default {
   rejectPayment,
   getUserPaymentStatus,
   resetPayment,
+  deletePayment,
   formatCurrency
 }

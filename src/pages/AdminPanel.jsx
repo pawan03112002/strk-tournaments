@@ -5,7 +5,7 @@ import useTournamentStore from '../store/tournamentStore'
 import useSettingsStore from '../store/settingsStore'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, resetPayment, formatCurrency } from '../services/paymentService'
+import { getPendingPayments, getAllPayments, verifyPayment, rejectPayment, resetPayment, deletePayment, formatCurrency } from '../services/paymentService'
 
 const AdminPanel = () => {
   const navigate = useNavigate()
@@ -16,6 +16,7 @@ const AdminPanel = () => {
   const deleteTeam = useTournamentStore((state) => state.deleteTeam)
   const updateTeamDetails = useTournamentStore((state) => state.updateTeamDetails)
   const bulkUpdateStages = useTournamentStore((state) => state.bulkUpdateStages)
+  const registerTeam = useTournamentStore((state) => state.registerTeam)
   const bulkDeleteTeams = useTournamentStore((state) => state.bulkDeleteTeams)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStage, setFilterStage] = useState('all')
@@ -81,7 +82,7 @@ const AdminPanel = () => {
 
     setPaymentLoading(true)
     try {
-      const result = await verifyPayment(paymentId)
+      const result = await verifyPayment(paymentId, registerTeam)
       if (result.teamNumber) {
         toast.success(`Payment verified! Team created: ${result.teamNumber}`)
       } else {
@@ -89,12 +90,9 @@ const AdminPanel = () => {
       }
       loadPayments()
       setSelectedPayment(null)
-      
-      // Force reload teams from localStorage to show new team
-      window.location.reload() // Reload to show new team in management
     } catch (error) {
       console.error('Verification error:', error)
-      toast.error('Failed to verify payment')
+      toast.error('Failed to verify payment: ' + error.message)
     } finally {
       setPaymentLoading(false)
     }
@@ -133,6 +131,22 @@ const AdminPanel = () => {
       setSelectedPayment(null)
     } catch (error) {
       toast.error('Failed to reset payment')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const handleDeletePayment = async (paymentId) => {
+    if (!confirm('Delete this payment entry permanently? This action cannot be undone.')) return
+
+    setPaymentLoading(true)
+    try {
+      await deletePayment(paymentId)
+      toast.success('Payment deleted successfully!')
+      loadPayments()
+      setSelectedPayment(null)
+    } catch (error) {
+      toast.error('Failed to delete payment')
     } finally {
       setPaymentLoading(false)
     }
@@ -1589,7 +1603,7 @@ const AdminPanel = () => {
 
                       {/* Reset Button - Show for verified or rejected payments */}
                       {(selectedPayment.status === 'verified' || selectedPayment.status === 'rejected') && (
-                        <div className="mt-4 pt-4 border-t border-gray-700">
+                        <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
                           <button
                             onClick={() => handleResetPayment(selectedPayment.id)}
                             disabled={paymentLoading}
@@ -1598,11 +1612,26 @@ const AdminPanel = () => {
                             <RefreshCw className="w-5 h-5" />
                             Reset to Pending
                           </button>
-                          <p className="text-xs text-gray-500 text-center mt-2">
+                          <p className="text-xs text-gray-500 text-center">
                             Reset payment to pending for re-verification
                           </p>
                         </div>
                       )}
+
+                      {/* Delete Button - Show for all payment statuses */}
+                      <div className="mt-4 pt-4 border-t border-gray-700">
+                        <button
+                          onClick={() => handleDeletePayment(selectedPayment.id)}
+                          disabled={paymentLoading}
+                          className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                          Delete Payment Entry
+                        </button>
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          ⚠️ Permanently delete this payment record
+                        </p>
+                      </div>
                     </div>
                   ) : (
                     <div className="card text-center py-12">

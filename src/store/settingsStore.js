@@ -224,6 +224,15 @@ const useSettingsStore = create(
     }),
     {
       name: 'settings-storage',
+      partialize: (state) => ({
+        // Only persist these fields to localStorage, exclude adminPassword for security
+        socialMedia: state.socialMedia,
+        support: state.support,
+        tournamentSettings: state.tournamentSettings,
+        paymentSettings: state.paymentSettings,
+        adminEmail: state.adminEmail,
+        // adminPassword is NOT persisted to localStorage, only loaded from Firebase
+      })
     }
   )
 )
