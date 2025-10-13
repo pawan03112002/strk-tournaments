@@ -163,13 +163,13 @@ const TournamentRegistration = () => {
         registrationData: {
           teamName: formData.teamName,
           contactEmail: formData.contactEmail,
+          countryCode: formData.countryCode,
+          phoneNumber: formData.phoneNumber,
           contactNumber: `${formData.countryCode}${formData.phoneNumber}`,
-          players: [
-            formData.player1Username,
-            formData.player2Username,
-            formData.player3Username,
-            formData.player4Username
-          ],
+          player1Username: formData.player1Username,
+          player2Username: formData.player2Username,
+          player3Username: formData.player3Username,
+          player4Username: formData.player4Username,
           teamLogo: logoPreview
         }
       }

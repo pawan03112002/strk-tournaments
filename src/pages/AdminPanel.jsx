@@ -55,13 +55,6 @@ const AdminPanel = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Load payments when payments tab is active
-  useEffect(() => {
-    if (activeTab === 'payments') {
-      loadPayments()
-    }
-  }, [activeTab, paymentFilter])
-
   const loadPayments = () => {
     const allPayments = getAllPayments()
     
@@ -76,6 +69,14 @@ const AdminPanel = () => {
     
     setPayments(filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
   }
+
+  // Load payments when payments tab is active
+  useEffect(() => {
+    if (activeTab === 'payments') {
+      loadPayments()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, paymentFilter])
 
   const handleVerifyPayment = async (paymentId) => {
     if (!confirm('Verify this payment? This will create a team entry.')) return

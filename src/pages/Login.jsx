@@ -31,7 +31,8 @@ const Login = () => {
   // Fetch users on mount
   useEffect(() => {
     fetchUsers()
-  }, [fetchUsers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // OTP Timer
   useEffect(() => {

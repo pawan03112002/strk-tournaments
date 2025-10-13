@@ -27,7 +27,8 @@ const Register = () => {
   // Fetch users on mount
   useEffect(() => {
     fetchUsers()
-  }, [fetchUsers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Timer for OTP expiry
   useEffect(() => {
