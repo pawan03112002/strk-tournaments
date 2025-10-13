@@ -6,20 +6,6 @@ import CryptoJS from 'crypto-js'
 // Encryption key (in production, store this in environment variables)
 const ENCRYPTION_KEY = 'STRK_ADMIN_SECURE_KEY_2025'
 
-// Helper functions for password encryption
-const encryptPassword = (password) => {
-  return CryptoJS.AES.encrypt(password, ENCRYPTION_KEY).toString()
-}
-
-const decryptPassword = (encryptedPassword) => {
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedPassword, ENCRYPTION_KEY)
-    return bytes.toString(CryptoJS.enc.Utf8)
-  } catch (error) {
-    return null
-  }
-}
-
 // Wrap store creation in try-catch to catch initialization errors
 let useSettingsStore
 
@@ -180,7 +166,7 @@ try {
           }
           
           const adminSettingsRef = doc(db, 'adminSettings', 'credentials')
-          const encrypted = encryptPassword(newPassword)
+          const encrypted = CryptoJS.AES.encrypt(newPassword, ENCRYPTION_KEY).toString()
           await setDoc(adminSettingsRef, {
             encryptedPassword: encrypted,
             adminEmail: get().adminEmail,
@@ -218,7 +204,7 @@ try {
             }
             
             const adminSettingsRef = doc(db, 'adminSettings', 'credentials')
-            const encrypted = encryptPassword(newPassword)
+            const encrypted = CryptoJS.AES.encrypt(newPassword, ENCRYPTION_KEY).toString()
             await setDoc(adminSettingsRef, {
               encryptedPassword: encrypted,
               adminEmail: state.adminEmail,
