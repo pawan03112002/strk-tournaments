@@ -25,7 +25,7 @@ let useSettingsStore
 
 try {
   console.log('🔄 Creating settingsStore...')
-  useSettingsStore = create((set) => ({
+  useSettingsStore = create((set, get) => ({
       // Social Media Links
       socialMedia: {
         facebook: { enabled: false, url: '' },
